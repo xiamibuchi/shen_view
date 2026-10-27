@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+root=$(git rev-parse --show-toplevel)
+exec bash "$root/tool/check/staged_files.sh"
