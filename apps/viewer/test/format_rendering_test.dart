@@ -58,11 +58,17 @@ void main() {
       addTearDown(resources.dispose);
       addTearDown(PaintingBinding.instance.imageCache.clear);
       final stat = file.statSync();
+      final fullSize = const {
+        'format_static.png',
+        'format_static.webp',
+        'format_static.jxl',
+        'format_static.avif',
+      }.contains(name);
       final entry = ImageEntry(
         file: file,
         format: format,
-        width: 4096,
-        height: 2160,
+        width: fullSize ? 4096 : 512,
+        height: fullSize ? 2160 : 270,
         byteLength: stat.size,
         modifiedAt: stat.modified,
       );

@@ -17,7 +17,7 @@
 | hdr_gain_map.avif | libavif/AOM ISO 21496 tmap AVIF；关联图层重建 |
 | hdr_gain_map.heic / hdr_gain_map.heif | HEVC tmap HEIF；主图、dimg 增益图及元数据联合重建 |
 | hdr_dovi_p81.hevc | 自有 Profile 8.1 单层 Dolby Vision 静帧；RPU 解析、有效高光和解码兼容性，尚无认证 Dolby 显示参考 |
-| hdr_gradient.hdr / hdr_gradient.exr | 旧渐变兼容样本，用于兼容性和性能；定量亮度请用自有阶梯图 |
+| hdr_gradient.hdr / hdr_gradient.exr | 512×270 旧渐变兼容样本；定量亮度请用自有阶梯图，大图解码性能基准使用 format_static.png |
 
 ## 自动化用例
 
