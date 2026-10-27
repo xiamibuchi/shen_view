@@ -1,0 +1,44 @@
+diff --git a/libavfilter/vf_libplacebo.c b/libavfilter/vf_libplacebo.c
+--- a/libavfilter/vf_libplacebo.c
++++ b/libavfilter/vf_libplacebo.c
+@@ -513,7 +513,6 @@ static int libplacebo_init(AVFilterContext *avctx)
+ {
+     int err = 0;
+     LibplaceboContext *s = avctx->priv;
+-    const AVVulkanDeviceContext *vkhwctx = NULL;
+ 
+     if (s->normalize_sar && s->fit_mode != FIT_FILL) {
+         av_log(avctx, AV_LOG_WARNING, "normalize_sar has no effect when using "
+@@ -593,13 +592,7 @@ static int libplacebo_init(AVFilterContext *avctx)
+     if (strcmp(s->fps_string, "none") != 0)
+         RET(av_parse_video_rate(&s->fps, s->fps_string));
+ 
+-    if (avctx->hw_device_ctx) {
+-        const AVHWDeviceContext *avhwctx = (void *) avctx->hw_device_ctx->data;
+-        if (avhwctx->type == AV_HWDEVICE_TYPE_VULKAN)
+-            vkhwctx = avhwctx->hwctx;
+-    }
+ 
+-    RET(init_vulkan(avctx, vkhwctx));
+ 
+     return 0;
+ 
+@@ -1287,6 +1280,18 @@ static int libplacebo_query_format(const AVFilterContext *ctx,
+     const AVPixFmtDescriptor *desc = NULL;
+     AVFilterFormats *infmts = NULL, *outfmts = NULL;
+ 
++    /* ffmpeg also parses a disposable graph to discover pads. Defer the GPU
++     * until format negotiation so that parse does not create a second device. */
++    if (!s->vulkan) {
++        const AVVulkanDeviceContext *hwctx = NULL;
++        if (ctx->hw_device_ctx) {
++            const AVHWDeviceContext *device = (void *) ctx->hw_device_ctx->data;
++            if (device->type == AV_HWDEVICE_TYPE_VULKAN)
++                hwctx = device->hwctx;
++        }
++        RET(init_vulkan((AVFilterContext *)ctx, hwctx));
++    }
++
+     /* List AV_PIX_FMT_VULKAN first to prefer it when possible */
+     if (s->have_hwdevice) {
+         RET(ff_add_format(&infmts, AV_PIX_FMT_VULKAN));

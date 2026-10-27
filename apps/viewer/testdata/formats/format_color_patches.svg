@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="120" viewBox="0 0 240 120">
+  <!-- Owned sRGB reference: three opaque primaries, then half-opacity primaries. -->
+  <path fill="#f00" d="M0 0h80v80H0z"/>
+  <path fill="#0f0" d="M80 0h80v80H80z"/>
+  <path fill="#00f" d="M160 0h80v80h-80z"/>
+  <g opacity="0.5">
+    <path fill="#f00" d="M0 80h80v40H0z"/>
+    <path fill="#0f0" d="M80 80h80v40H80z"/>
+    <path fill="#00f" d="M160 80h80v40h-80z"/>
+  </g>
+</svg>

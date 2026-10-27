@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "sources": {
+    "viewer_jpeg": {
+      "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/3.1.1.tar.gz",
+      "sha256": "304165ae11e64ab752e9cfc07c37bfdc87abd0bfe4bc699e59f34036d9c84f72",
+      "sourceSubdir": "_viewer_no_subdir"
+    },
+    "libaom": {
+      "url": "https://storage.googleapis.com/aom-releases/libaom-3.14.1.tar.gz",
+      "sha256": "44bf90dbd23e734d50e70a8c41c285193922938bd0d3bc2ee56764d181d55ef5"
+    },
+    "viewer_avif": {
+      "url": "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v1.4.2.tar.gz",
+      "sha256": "2b645287340ba5a631d268b551dc2d72bd73ac33335962dd36dcdb6d8366921d"
+    },
+    "viewer_lcms": {
+      "url": "https://github.com/mm2/Little-CMS/archive/refs/tags/lcms2.17.tar.gz",
+      "sha256": "6e6f6411db50e85ae8ff7777f01b2da0614aac13b7b9fcbea66dc56a1bc71418",
+      "sourceSubdir": "_viewer_no_subdir"
+    },
+    "viewer_libraw": {
+      "url": "https://www.libraw.org/data/LibRaw-0.22.0.tar.gz",
+      "sha256": "1071e6e8011593c366ffdadc3d3513f57c90202d526e133174945ec1dd53f2a1",
+      "sourceSubdir": "_viewer_no_subdir"
+    },
+    "ultrahdr": {
+      "url": "https://github.com/google/libultrahdr/archive/refs/tags/v1.4.0.tar.gz",
+      "sha256": "e7e1252e2c44d8ed6b99ee0f67a3caf2d8a61c43834b13b1c3cd485574c03ab9"
+    },
+    "viewer_7zip": {
+      "url": "https://www.7-zip.org/a/7z2501-src.7z",
+      "sha256": "2aed39b8f1238464475e9de7dda169a5e873a1dc8bbf4f664b943eaba5620181",
+      "sourceSubdir": "_viewer_no_subdir"
+    }
+  },
+  "artifacts": {
+    "resvg": {
+      "version": "0.49.0",
+      "urlTemplate": "https://github.com/linebender/resvg/releases/download/v{version}/resvg-{platform}.zip",
+      "sha256": {
+        "win-x86_64": "38af9631b37e61118a32a5ef31e6be6af083eda63b4c17ffc4fdc63e449277df",
+        "win-aarch64": "8fb77a759daecda8e83c40dc0f478ad49e35ce704b97f258f8130409cb77b714",
+        "macos-aarch64": "847acb5210c7c6244b5e8f07dd62fa1ce596108cce8193628ebfd5750504b259",
+        "macos-x86_64": "7c92cba55348f0254707c8d2c61e71651296981f8ccfadf8477782e91db5e171"
+      }
+    },
+    "nuget": {
+      "version": "6.14.0",
+      "url": "https://dist.nuget.org/win-x86-commandline/v6.14.0/nuget.exe",
+      "sha256": "92dbed160ddee0f64b901e907439e021211b428e57c089ecc12fc38dcc4bd9a5"
+    }
+  }
+}

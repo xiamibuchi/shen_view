@@ -1,0 +1,121 @@
+[
+  {
+    "package": "mingw-w64-x86_64-pkgconf",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-pkgconf-1~3.0.10-1-any.pkg.tar.zst",
+    "bytes": 150258,
+    "sha256": "430C96143EC00912CAB2BDB257DD84BAF2D583E38681A0D6B552D07B43C95CE1",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-pkgconf"
+  },
+  {
+    "package": "mingw-w64-x86_64-nasm",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-nasm-3.02-1-any.pkg.tar.zst",
+    "bytes": 453241,
+    "sha256": "63493C3F1EE2EA71727ACFC338C53A6F5A18D1C2C21CDB5D39DEA227756E2FE4",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-nasm"
+  },
+  {
+    "package": "mingw-w64-x86_64-zlib",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-zlib-1.3.2-3-any.pkg.tar.zst",
+    "bytes": 110030,
+    "sha256": "FFDE6F4ED2D879477C93B37FF14C319BAF480A2AEAFC065EDECEAFBA26B71E90",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-zlib"
+  },
+  {
+    "package": "mingw-w64-x86_64-dav1d",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-dav1d-1.5.4-1-any.pkg.tar.zst",
+    "bytes": 903903,
+    "sha256": "10B2EC838A8421E1D14DDBF2084683E96A08EA4686DA05D91B958C0CBAC87684",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-dav1d"
+  },
+  {
+    "package": "mingw-w64-x86_64-zimg",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-zimg-3.0.6-3-any.pkg.tar.zst",
+    "bytes": 361914,
+    "sha256": "70D46458851C51B27FAF4BEFE4C946D386836487156209541CC2DEC4AADE5FDC",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-zimg"
+  },
+  {
+    "package": "mingw-w64-x86_64-libplacebo",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-libplacebo-7.360.1-2-any.pkg.tar.zst",
+    "bytes": 761837,
+    "sha256": "4A3E80C3EF2DA2E948764F909C4DFABB2929A1B18FCC4B956C47CF3CF4DC2453",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-libplacebo"
+  },
+  {
+    "package": "mingw-w64-x86_64-lcms2",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-lcms2-2.19.1-1-any.pkg.tar.zst",
+    "bytes": 404793,
+    "sha256": "F9858D910DF27D3762590E5DA75E2589F9F0216EBBF1B6D58BDDDBAB3D4F35AD",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-lcms2"
+  },
+  {
+    "package": "mingw-w64-x86_64-libdovi",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-libdovi-3.4.0-1-any.pkg.tar.zst",
+    "bytes": 2093615,
+    "sha256": "371C8C7474C15D99B011E193D0413788A5D52098A3AEE258C3977B78C5DDA056",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-libdovi"
+  },
+  {
+    "package": "mingw-w64-x86_64-shaderc",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-shaderc-2026.4-1-any.pkg.tar.zst",
+    "bytes": 3793652,
+    "sha256": "8AF380B68BA3CBB0ABCD70EB17A1BB84FC7925915FD1A7A5D570CD1DA8D0C2DC",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-shaderc"
+  },
+  {
+    "package": "mingw-w64-x86_64-spirv-cross",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-spirv-cross-1~1.4.363.0-1-any.pkg.tar.zst",
+    "bytes": 2198483,
+    "sha256": "191494C8A289C246985CAD164D9526C315621B976229E547D8B22BCCD11E53D5",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-spirv-cross"
+  },
+  {
+    "package": "mingw-w64-x86_64-vulkan-loader",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-vulkan-loader-1~1.4.363.0-1-any.pkg.tar.zst",
+    "bytes": 223456,
+    "sha256": "281FA31B1A023485D4FD04A092A8B5E9CA2F59804DF7FCF9F2D4E5AAA5438AF0",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-vulkan-loader"
+  },
+  {
+    "package": "mingw-w64-x86_64-vulkan-headers",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-vulkan-headers-1~1.4.363.0-1-any.pkg.tar.zst",
+    "bytes": 1799227,
+    "sha256": "D2E0C72A461E3D128CAEAC9FBF113FB3CCE14644ACECE32339E448B984D8938D",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-vulkan-headers"
+  },
+  {
+    "package": "mingw-w64-x86_64-spirv-headers",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-spirv-headers-2~1.4.363.0-1-any.pkg.tar.zst",
+    "bytes": 207812,
+    "sha256": "33882203CAF0309DCD14502830DF947841BE44E997A71C41C39F75E4A16D6BE1",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-spirv-headers"
+  },
+  {
+    "package": "mingw-w64-x86_64-libgcc",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-libgcc-16.2.0-6-any.pkg.tar.zst",
+    "bytes": 77153,
+    "sha256": "E0815432C4225892B0EEF57055FE507FA0B9A036436F046605F6629696BD1B88",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-libgcc"
+  },
+  {
+    "package": "mingw-w64-x86_64-libstdc++",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-libstdc%2B%2B-16.2.0-6-any.pkg.tar.zst",
+    "bytes": 797366,
+    "sha256": "924B47E8C3E20B6448E29D3333ACC638A4F4783C1C45230E09673532F9C4F198",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-libstdc++"
+  },
+  {
+    "package": "mingw-w64-x86_64-libwinpthread",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-libwinpthread-14.0.0.r532.gdbbc8e99d-1-any.pkg.tar.zst",
+    "bytes": 34756,
+    "sha256": "231511BB8A0E9BE168930CEC1CE55B2896B3120516CB9D452811DBD335A3C539",
+    "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-libwinpthread"
+  },
+  {
+    "package": "make",
+    "url": "https://repo.msys2.org/msys/x86_64/make-4.4.1-3-x86_64.pkg.tar.zst",
+    "bytes": 514683,
+    "sha256": "AF0BDBA17F06FE037F0194069ADAA31A8FE45F1A11381501896AEA1FAE37BD5D",
+    "source": "https://packages.msys2.org/packages/make"
+  }
+]

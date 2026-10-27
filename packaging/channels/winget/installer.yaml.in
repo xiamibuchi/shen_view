@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.9.0.schema.json
+PackageIdentifier: @PACKAGE_ID@
+PackageVersion: @VERSION@
+InstallerType: inno
+Scope: machine
+ElevationRequirement: elevatesSelf
+MinimumOSVersion: @MINIMUM_WINDOWS@
+UpgradeBehavior: install
+InstallModes:
+  - interactive
+  - silent
+  - silentWithProgress
+InstallerSwitches:
+  Silent: /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+  SilentWithProgress: /SILENT /SUPPRESSMSGBOXES /NORESTART
+  InstallLocation: /ROOT="<INSTALLPATH>"
+ProductCode: ShenView.Inno7_is1
+AppsAndFeaturesEntries:
+  - DisplayName: ShenView
+    Publisher: ShenView
+    ProductCode: ShenView.Inno7_is1
+Installers:
+  - Architecture: x64
+    InstallerUrl: @INSTALLER_URL@
+    InstallerSha256: @SHA256@
+ManifestType: installer
+ManifestVersion: 1.9.0

@@ -1,0 +1,10 @@
+name: shen_view_design_lints
+publish_to: none
+description: Design-system custom lints for ShenView presentation code.
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  analyzer: ^8.0.0
+  custom_lint_builder: ^0.8.1

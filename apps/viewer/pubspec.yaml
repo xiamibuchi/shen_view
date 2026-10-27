@@ -1,0 +1,49 @@
+name: shen_view
+description: ShenView — a desktop image viewer for local pictures, folders and comics.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.7
+  flutter: '>=3.47.8'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.3
+  file_picker: ^13.2.0
+  image: ^4.12.0
+  path: ^1.9.1
+  window_manager: ^0.5.2
+  screen_retriever: ^0.2.2
+  windows_file_picker: ^2.0.1
+  desktop_drop: ^0.8.4
+  vector_math: ^2.4.3
+  printing: ^5.15.1
+  pdf: ^3.13.1
+  fluentui_system_icons: ^1.1.273
+  flutter_inappwebview: 6.1.5
+  xml: 7.0.1
+  csslib: 1.0.2
+  crypto: 3.0.7
+
+dev_dependencies:
+  archive: ^4.5.2
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  custom_lint: ^0.8.1
+  shen_view_design_lints:
+    path: tool/design_lints
+
+flutter:
+  generate: true
+  # Flutter's default controls still reference Material icon glyphs.
+  uses-material-design: true
+  assets:
+    - assets/ui/app-icon.png
+    - assets/ui/info.png

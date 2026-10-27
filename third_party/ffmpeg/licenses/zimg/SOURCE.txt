@@ -1,0 +1,3 @@
+zimg 3.0.6, upstream COPYING (not included in the MSYS2 runtime package).
+Source: https://github.com/sekrit-twc/zimg/blob/release-3.0.6/COPYING
+SHA256: 7637386B5F81E8A719CA336233149005E5FA28B5E6054EA7B67DE49355B0AD40

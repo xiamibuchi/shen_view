@@ -1,0 +1,16 @@
+{
+  "version": "@VERSION@",
+  "description": "ShenView - desktop image, folder and comic viewer",
+  "homepage": "@HOMEPAGE@",
+  "license": "@LICENSE@",
+  "architecture": {
+    "64bit": {
+      "url": "@ZIP_URL@",
+      "hash": "@SHA256@"
+    }
+  },
+  "persist": "user-data",
+  "pre_install": "Set-Content -LiteralPath (Join-Path $dir 'installation-mode') -Value 'scoop' -Encoding ascii; if (-not (Test-Path -LiteralPath (Join-Path $dir 'user-data'))) { New-Item -ItemType Directory -Path (Join-Path $dir 'user-data') | Out-Null }",
+  "shortcuts": [["ShenView.exe", "ShenView"]],
+  "pre_uninstall": "if ($cmd -eq 'uninstall') { $p = Start-Process -FilePath (Join-Path $dir 'ShenView.exe') -ArgumentList '--remove-file-types' -WindowStyle Hidden -PassThru -Wait; if ($p.ExitCode -ne 0) { throw 'Unable to remove ShenView file associations' } }"
+}

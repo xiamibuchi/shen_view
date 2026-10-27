@@ -1,0 +1,21 @@
+ShenView uses parts of 7-Zip, Copyright (C) Igor Pavlov.
+7-Zip is primarily licensed under GNU LGPL 2.1 or later. Some engine code
+uses BSD licenses and the unRAR restriction; see the accompanying notices.
+
+Project and source downloads: https://www.7-zip.org/
+Helper interface/source version: 25.01
+Corresponding upstream source: https://www.7-zip.org/a/7z2501-src.7z
+
+The macOS engine is compiled from the source version above. The Windows
+engine is supplied separately; packaged releases record its version and
+source location in ENGINE.txt. Engine-License.txt contains its notices.
+
+The viewer_archive helper uses 7-Zip interfaces and supporting source.
+Its corresponding source and build instructions are in:
+  native/archive_helper/
+  tool/build/build_archive_helper.ps1
+  tool/build/build_archive_helper.sh
+Release distributors must make the corresponding LGPL-covered source,
+including their modifications and build instructions, available under
+the applicable license. The relative paths above describe repository
+content and do not themselves constitute a source distribution or offer.

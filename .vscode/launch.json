@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ShenView",
+      "request": "launch",
+      "type": "dart",
+      "program": "${workspaceFolder}/apps/viewer/lib/main.dart",
+      "cwd": "${workspaceFolder}/apps/viewer"
+    },
+    {
+      "name": "ShenView · Profile",
+      "request": "launch",
+      "type": "dart",
+      "program": "${workspaceFolder}/apps/viewer/lib/main.dart",
+      "flutterMode": "profile",
+      "cwd": "${workspaceFolder}/apps/viewer"
+    },
+    {
+      "name": "ShenView · Theme demo",
+      "request": "launch",
+      "type": "dart",
+      "program": "${workspaceFolder}/apps/viewer/lib/main.dart",
+      "toolArgs": [
+        "--dart-define=SHENVIEW_THEME_DEMO=true"
+      ],
+      "cwd": "${workspaceFolder}/apps/viewer"
+    }
+  ]
+}

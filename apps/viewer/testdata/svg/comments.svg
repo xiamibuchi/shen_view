@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100">
+  <!-- @font-face { src: url(data:font/woff2;base64,AAAA); } <animate/> var(--ink) -->
+  <style>/* @keyframes ignored { } animation: ignored; */ .ink { fill: #00aa00; }</style>
+  <rect class="ink" width="200" height="100"/>
+</svg>

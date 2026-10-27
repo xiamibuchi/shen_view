@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.22)
+project(viewer_hdr_video LANGUAGES C)
+find_package(PkgConfig REQUIRED)
+find_package(Threads REQUIRED)
+pkg_check_modules(AVFORMAT REQUIRED IMPORTED_TARGET libavformat>=63)
+pkg_check_modules(AVCODEC REQUIRED IMPORTED_TARGET libavcodec>=63)
+pkg_check_modules(AVUTIL REQUIRED IMPORTED_TARGET libavutil>=61)
+pkg_check_modules(PLACEBO REQUIRED IMPORTED_TARGET libplacebo>=7.360)
+add_executable(viewer_hdr_video worker.c)
+set_target_properties(viewer_hdr_video PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED YES)
+target_link_libraries(viewer_hdr_video PRIVATE PkgConfig::AVFORMAT PkgConfig::AVCODEC
+  PkgConfig::AVUTIL PkgConfig::PLACEBO Threads::Threads)
+install(TARGETS viewer_hdr_video RUNTIME DESTINATION bin)

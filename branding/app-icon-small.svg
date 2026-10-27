@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-labelledby="title">
+  <title id="title">ShenView 小尺寸简化图标</title>
+  <rect width="32" height="32" rx="7" fill="#137F7D"/>
+  <g fill="none" stroke="#FFF8E9" stroke-width="3" stroke-linecap="round"><path d="M12 13 C7 14 4 10 7 7"/><path d="M20 13 C25 14 28 10 25 7"/></g>
+  <path fill="#FFF8E9" fill-rule="evenodd" d="M10 12 Q16 10 22 12 L22 19 Q22 24 16 27 Q10 24 10 19 Z M12.5 20 L16 16 L20.5 21 L14 23 Z"/>
+</svg>

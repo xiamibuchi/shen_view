@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+PackageIdentifier: @PACKAGE_ID@
+PackageVersion: @VERSION@
+PackageLocale: zh-CN
+Publisher: ShenView
+PackageName: ShenView
+License: @LICENSE@
+ShortDescription: 神羊看图，一款用于本地图片、文件夹和漫画的桌面查看器。
+PackageUrl: @HOMEPAGE@
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0

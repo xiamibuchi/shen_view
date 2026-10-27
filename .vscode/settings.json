@@ -1,0 +1,20 @@
+{
+  "cmake.configureOnOpen": false,
+  "cmake.configureOnEdit": false,
+  "cmake.autoDetectSourceDirectory": false,
+  "search.exclude": {
+    "**/.dart_tool": true,
+    "build": true,
+    "apps/*/build": true,
+    "**/artifacts": true,
+    "**/coverage": true
+  },
+  "[dart]": {
+    "editor.defaultFormatter": "Dart-Code.dart-code",
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.rulers": [
+      80
+    ]
+  }
+}

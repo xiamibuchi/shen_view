@@ -1,0 +1,16 @@
+enum ArchiveFailureKind {
+  missingTool,
+  encrypted,
+  corrupt,
+  unsupported,
+  limit,
+  timeout,
+  unsafePath,
+  io,
+  empty,
+  wrongPassword,
+  passwordUnverifiable,
+  volumeMissing,
+  sourceChanged,
+  resource,
+}

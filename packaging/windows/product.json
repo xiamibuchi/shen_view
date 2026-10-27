@@ -1,0 +1,9 @@
+{
+  "name": "ShenView",
+  "displayName": "ShenView",
+  "publisherDisplayName": "ShenView",
+  "packageName": "ShenView.ShenView",
+  "publisher": "CN=ShenView",
+  "wingetId": "ShenView.ShenView",
+  "minimumWindowsVersion": "10.0.19041.0"
+}
