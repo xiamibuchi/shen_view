@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+root=$(git rev-parse --show-toplevel)
+exec sh "$root/tool/check/commit_message.sh" --message-file "$1"

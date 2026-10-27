@@ -1,0 +1,39 @@
+name: Commit messages
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  commit-format:
+    name: Commit message format (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test validator and Git hook
+        shell: bash
+        run: sh tool/check/commit_message_test.sh
+      - name: Check new commits
+        shell: bash
+        env:
+          COMMIT_EVENT_NAME: ${{ github.event_name }}
+          COMMIT_BEFORE: ${{ github.event.before }}
+          COMMIT_AFTER: ${{ github.event.after }}
+          COMMIT_PR_BASE: ${{ github.event.pull_request.base.sha }}
+          COMMIT_PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          COMMIT_REF: ${{ github.ref }}
+          COMMIT_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: sh tool/check/commit_message.sh --event

@@ -34,6 +34,47 @@ VS Code 使用 Flutter 扩展选择设备，主工程不交给 CMake Tools 自�
 个人 SDK 路径、主题与生成器放在用户设置。移动仓库后重新打开目录并执行 flutter pub get，
 旧绝对路径缓存通过 flutter clean 后重建，不手改生成文件。
 
+## Git 提交格式
+
+克隆仓库后执行以下命令，启用当前仓库的提交检查：
+
+```sh
+git config --local core.hooksPath .githooks
+```
+
+Windows 使用 Git for Windows 自带的 Git Bash；macOS 和 Linux 使用系统 `sh`。
+检查脚本仅依赖 Git 及常见 shell 工具，无需安装 Node.js、Python 或 PowerShell。
+hook 的 LF 换行由 `.gitattributes` 固定。
+
+提交首行采用 `类型(范围): 描述`，范围可省略，描述支持中文：
+
+```text
+feat(viewer): 增加图片旋转
+fix(hdr): 修复高光显示异常
+docs: 更新运行说明
+feat(api)!: 移除旧接口
+```
+
+类型为小写的 `feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、
+`ci`、`chore` 或 `revert`。范围不能包含空白或嵌套括号；冒号后使用一个普通空格，
+描述不能为空或带首尾空白。检查只约束首行，正文和 footer 不限；支持 UTF-8、BOM、
+LF 和 CRLF。`fixup!`、`squash!` 提交须整理后再提交。
+
+本地 hook 与 GitHub Actions 共用 `tool/check/commit_message.sh`。Actions 在 Windows、
+macOS 和 Linux 上运行测试，并检查 push、PR 中新增的非合并提交，不追溯已有提交。
+新分支与默认分支比较；手动触发时检查 HEAD 相对第一父提交新增的提交。真正的 merge
+commit 跳过首行格式检查，其包含的普通提交仍会在 Actions 中检查。
+
+在 Git Bash、macOS 或 Linux 终端中运行校验工具的测试：
+
+```sh
+sh tool/check/commit_message_test.sh
+sh tool/check/commit_message.sh --range BASE HEAD
+```
+
+本地 hook 可被 `--no-verify` 绕过。若需阻止未通过检查的 PR 合并，须在 GitHub 分支规则中
+将三个 `Commit message format` 检查设为必需，并限制直接推送和绕过权限。
+
 ## 配置存储与排查
 
 Windows 普通安装版配置为 %LOCALAPPDATA%/ShenView/settings.json；便携版和 Scoop
