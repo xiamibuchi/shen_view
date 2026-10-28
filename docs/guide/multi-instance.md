@@ -32,5 +32,5 @@ Finder、NSWorkspace 和沙箱权限仍需 macOS 实机验证。
 失焦只减少预载，不清空已显示的内容。
 
 事务实现见 [AppConfigStore](../../apps/viewer/lib/src/application/app_config_store.dart)，配置位置和故障排查见
-[开发说明](../development/getting-started.md#配置存储与排查)，验证入口见
+[配置排查](../development/troubleshooting.md)，验证入口见
 [验证说明](../development/validation.md)。

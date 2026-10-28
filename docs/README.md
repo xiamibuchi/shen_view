@@ -1,6 +1,6 @@
 # ShenView 文档
 
-应用介绍与运行命令见 [项目 README](../README.md)。文档按用途分类：
+应用介绍见[项目 README](../README.zh-CN.md)，构建与运行见[开发环境](development/getting-started.md)。文档按用途分类：
 
 | 分类 | 内容 |
 | --- | --- |
@@ -40,7 +40,9 @@
 
 ## 开发与验证
 
-- [开发环境、配置排查与代码约束](development/getting-started.md)
+- [开发入门：环境准备、构建运行与检查](development/getting-started.md)
+- [Git 工作流：提交格式与 LFS](development/git-workflow.md)
+- [配置存储与排查](development/troubleshooting.md)
 - [验证入口与验收边界](development/validation.md)
 - [Windows 真机回归](development/windows-regression.md)
 

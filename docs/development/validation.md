@@ -76,6 +76,15 @@ macOS 对应显示测试使用 -d macos，并另验 EDR 与窗口行为。
 
 ## 视觉复核
 
+在 apps/viewer/ 中运行浅色、深色并排主题预览：
+
+~~~powershell
+flutter run -d windows --dart-define=SHENVIEW_THEME_DEMO=true
+~~~
+
+macOS 使用 `-d macos`。Release 也支持 `ShenView.exe --theme-demo`。
+预览只用于视觉评审，真实文件索引、解码、窗口与打印以查看器为准。
+
 设置以下变量可重新导出相关 Widget 测试截图：
 
 | 测试 | 输出目录变量 |
