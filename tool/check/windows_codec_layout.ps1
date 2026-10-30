@@ -21,7 +21,12 @@ function Invoke-Codec([string]$Relative,[string[]]$Arguments,[string]$Name,[stri
   $process=[Diagnostics.Process]::new();$process.StartInfo=$info
   $output=Join-Path $OutputDirectory ($Name+'.bin')
   try{
-    [void]$process.Start()
+    # .NET Framework inherits stdin encoding from Console and writes its BOM at Start.
+    $inputEncoding=[Console]::InputEncoding
+    try{
+      [Console]::InputEncoding=[Text.UTF8Encoding]::new($false)
+      [void]$process.Start()
+    }finally{[Console]::InputEncoding=$inputEncoding}
     $stream=[IO.File]::Create($output)
     try{
       $copy=$process.StandardOutput.BaseStream.CopyToAsync($stream)

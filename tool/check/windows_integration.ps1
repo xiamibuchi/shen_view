@@ -43,8 +43,14 @@ try {
   if ($targets.Count -eq 0) { throw '没有找到 Windows 集成测试' }
   foreach ($target in $targets) {
     Write-Host "=== $($target.Name) ==="
-    & $flutterPath test $target.FullName @commonArguments 2>&1 | Tee-Object -FilePath (Join-Path $output "$($target.BaseName).log")
-    $results += [pscustomobject]@{ target = $target.Name; exitCode = $LASTEXITCODE }
+    $errorPreference = $ErrorActionPreference
+    try {
+      # Windows PowerShell wraps compiler warnings on stderr as NativeCommandError.
+      $ErrorActionPreference = 'Continue'
+      & $flutterPath test $target.FullName @commonArguments 2>&1 | Tee-Object -FilePath (Join-Path $output "$($target.BaseName).log") -ErrorAction Stop
+      $exitCode = $LASTEXITCODE
+    } finally { $ErrorActionPreference = $errorPreference }
+    $results += [pscustomobject]@{ target = $target.Name; exitCode = $exitCode }
   }
   $results | ConvertTo-Json | Set-Content (Join-Path $output 'results.json') -Encoding UTF8
   $failed = @($results | Where-Object { $_.exitCode -ne 0 })

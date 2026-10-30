@@ -2,7 +2,7 @@
 
 `viewer_avif_animation` is a persistent libavif decoder for AVIF image sequences.
 It uses a bounded metadata handshake followed by frame-index requests on stdin
-and premultiplied sRGB RGBA frames on stdout. Little CMS 2.17 handles ICC/CICP
+and premultiplied sRGB RGBA frames on stdout. Little CMS 2.19.1 handles ICC/CICP
 color conversion; PQ/HLG sequences use a fixed 203-nit reference white and SDR
 tone mapping. Progressive layers are not animation frames.
 Windows and macOS app builds provision and bundle this helper and its notices
@@ -24,8 +24,8 @@ four stops of gain, no gain for empty/near-black frames). The HDR output keeps
 unclipped floating-point highlights; the SDR output applies the display curve.
 Changing automatic HDR only changes presentation, not the RAW exposure.
 
-The Windows build pins libultrahdr v1.4.0 and libjpeg-turbo 3.1.1. The HEIF helper
-loads the ImageMagick/libheif runtime from the same `codecs` directory, so it does
+The build pins libultrahdr v2.0.2 and libjpeg-turbo 3.2.1. The HEIF helper
+loads the bundled ImageMagick/libheif runtime from `codecs/imagemagick` on Windows, so it does
 not add a second HEVC library or a process-global decoder. Configure and
 build from the repository root with:
 

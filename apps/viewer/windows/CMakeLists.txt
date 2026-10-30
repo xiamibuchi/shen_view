@@ -54,6 +54,17 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/../../../native/svg_codec/windows.cmake")
 add_subdirectory("runner")
 
 # Archive browsing is an indexed SDK client; the engine ships with the app.
+execute_process(COMMAND powershell.exe -NoProfile -ExecutionPolicy Bypass
+  -File "${CMAKE_CURRENT_SOURCE_DIR}/../../../tool/build/install_windows_codecs.ps1"
+  RESULT_VARIABLE SHENVIEW_CODECS_RESULT)
+if(NOT SHENVIEW_CODECS_RESULT EQUAL 0)
+  message(FATAL_ERROR "Failed to provision the locked Windows codecs")
+endif()
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../../../third_party/dependencies.lock.json" SHENVIEW_CODECS_LOCK)
+string(JSON SHENVIEW_7ZIP_VERSION GET "${SHENVIEW_CODECS_LOCK}" artifacts sevenZipWindows version)
+set(VIEWER_7ZIP_ENGINE
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/windows-codecs/7zip-${SHENVIEW_7ZIP_VERSION}/7z.dll"
+  CACHE FILEPATH "7-Zip engine to package" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../../native/archive_helper"
   "${CMAKE_CURRENT_BINARY_DIR}/archive-helper")
 

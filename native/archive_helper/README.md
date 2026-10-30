@@ -1,7 +1,7 @@
 # Indexed archive helper
 
 This read-only client uses the official [7-Zip SDK interfaces](https://www.7-zip.org/sdk.html),
-with headers/source pinned to 25.01 and SHA-256 verified by CMake. Windows builds
+with headers/source pinned to 26.05 and SHA-256 verified by CMake. Windows builds
 load `7z.dll` adjacent to the helper; macOS builds compile the official Format7zF
 shared-library bundle and load the adjacent `7z.so`. The engine is distributed
 with the app, together with LGPL/unRAR notices. The application exposes no
@@ -11,7 +11,7 @@ Windows runtime packaging contains the helper and DLL, without 7z.exe. The
 application bundles this pair in codecs/archive/ with its app-local
 VC Runtime. Development builds keep the helper and engine adjacent in bin/.
 The command-line tool is only a development fixture/probe dependency. SDK/source
-25.01 is distinct from the separately supplied Windows engine version; the
+26.05 is tracked separately from the Windows engine version; the
 packager records that version in licenses/7zip/ENGINE.txt. Commercial use and
 redistribution obligations are documented in
 [the archive licensing audit](../../docs/release/archive-licensing.md).
@@ -26,9 +26,9 @@ Flutter embedding, build the requested architectures, package the engine and
 helper, and sign the sandbox-inheriting helper with the app's identity (or
 ad-hoc when no signing identity is enabled). CMake/Clang/make must be available
 on the build machine; fetched SDK sources stay in CMake's build cache. Windows
-build machines need a redistributable 7-Zip engine. CMake searches beside the
-7z/7zz executable on PATH and under the system Program Files directory;
-custom installations can set VIEWER_7ZIP_ENGINE in CMake.
+builds obtain the pinned 7-Zip engine through tool/build/install_windows_codecs.ps1.
+Standalone CMake builds can set VIEWER_7ZIP_ENGINE explicitly, or search beside
+7z/7zz on PATH and under the system Program Files directory.
 Runtime machines do not need a 7-Zip installation. The macOS script accepts an
 app bundle path as its optional first argument to copy and locally sign the
 helper, engine and notices before the app's final signing step.

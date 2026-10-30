@@ -9,7 +9,8 @@ $ErrorActionPreference = 'Stop'
 $root = $RepositoryRoot
 $CMake = Resolve-ShenViewCMake $CMake
 if (-not $SevenZipEngine) {
-  $SevenZipEngine = Join-Path (Split-Path (Resolve-ShenViewSevenZip)) '7z.dll'
+  $lockedCodecs = & (Join-Path $PSScriptRoot 'install_windows_codecs.ps1')
+  $SevenZipEngine = Join-Path $lockedCodecs.SevenZipDirectory '7z.dll'
 }
 if (-not (Test-Path -LiteralPath $SevenZipEngine -PathType Leaf)) { throw '未找到 7z.dll，请传 -SevenZipEngine。' }
 $build = Join-Path $root 'build/archive-helper'

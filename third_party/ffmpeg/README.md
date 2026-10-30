@@ -36,7 +36,7 @@ PQ/HLG 视频首帧的 CLI 路径也使用原始 RGBA16，不经过 PNG。
 Windows 构建入口自动编译 helper，manifest.json 的 workerIdentity 单独追踪源码及
 构建脚本哈希，helper 更新不强制重编 FFmpeg。helper 源码随运行组件构建配方提供。
 其他平台可用 native/hdr_video/CMakeLists.txt 对接 pkg-config 中匹配的 FFmpeg 9 /
-libplacebo 7.360 组件；macOS 仍需完成下述依赖封装、签名和 Vulkan 实机验收。
+libplacebo 7.387 组件；macOS 仍需完成下述依赖封装、签名和 Vulkan 实机验收。
 
 macOS 的音频输出接口使用 AVAudioEngine，定位器预留 Contents/Helpers/ffmpeg 和
 ffprobe。当前自动构建、依赖锁定及打包产物仅验证 Windows x64，不能直接使用 Windows

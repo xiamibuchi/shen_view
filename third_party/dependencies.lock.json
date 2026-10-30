@@ -2,35 +2,35 @@
   "schemaVersion": 1,
   "sources": {
     "viewer_jpeg": {
-      "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/3.1.1.tar.gz",
-      "sha256": "304165ae11e64ab752e9cfc07c37bfdc87abd0bfe4bc699e59f34036d9c84f72",
+      "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.1/libjpeg-turbo-3.2.1.tar.gz",
+      "sha256": "c27ad72a68da151177929aa969ae773a2da5ac2af9ce946079314fdac8cece7f",
       "sourceSubdir": "_viewer_no_subdir"
     },
     "libaom": {
-      "url": "https://storage.googleapis.com/aom-releases/libaom-3.14.1.tar.gz",
-      "sha256": "44bf90dbd23e734d50e70a8c41c285193922938bd0d3bc2ee56764d181d55ef5"
+      "url": "https://storage.googleapis.com/aom-releases/libaom-3.15.2.tar.gz",
+      "sha256": "67bb54b245f33ed98600e08269e6139986e48114e14042474ddd8885801dfddc"
     },
     "viewer_avif": {
       "url": "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v1.4.2.tar.gz",
       "sha256": "2b645287340ba5a631d268b551dc2d72bd73ac33335962dd36dcdb6d8366921d"
     },
     "viewer_lcms": {
-      "url": "https://github.com/mm2/Little-CMS/archive/refs/tags/lcms2.17.tar.gz",
-      "sha256": "6e6f6411db50e85ae8ff7777f01b2da0614aac13b7b9fcbea66dc56a1bc71418",
+      "url": "https://github.com/mm2/Little-CMS/archive/refs/tags/lcms2.19.1.tar.gz",
+      "sha256": "267705e278e2f7c2fb886c259dadcbaeb2be52748bcbc71c79f08aacacb7a709",
       "sourceSubdir": "_viewer_no_subdir"
     },
     "viewer_libraw": {
-      "url": "https://www.libraw.org/data/LibRaw-0.22.0.tar.gz",
-      "sha256": "1071e6e8011593c366ffdadc3d3513f57c90202d526e133174945ec1dd53f2a1",
+      "url": "https://www.libraw.org/data/LibRaw-0.22.3.tar.gz",
+      "sha256": "789f3c33466210a1a0907f747a97c715d21bbf4af712f257fcbbd90111b227e4",
       "sourceSubdir": "_viewer_no_subdir"
     },
     "ultrahdr": {
-      "url": "https://github.com/google/libultrahdr/archive/refs/tags/v1.4.0.tar.gz",
-      "sha256": "e7e1252e2c44d8ed6b99ee0f67a3caf2d8a61c43834b13b1c3cd485574c03ab9"
+      "url": "https://github.com/google/libultrahdr/archive/refs/tags/v2.0.2.tar.gz",
+      "sha256": "aa8d193bb887c348c419780511dd03b374f4e07af8812b6d3f80c8537cf1ef2c"
     },
     "viewer_7zip": {
-      "url": "https://www.7-zip.org/a/7z2501-src.7z",
-      "sha256": "2aed39b8f1238464475e9de7dda169a5e873a1dc8bbf4f664b943eaba5620181",
+      "url": "https://github.com/ip7z/7zip/releases/download/26.05/7z2605-src.tar.xz",
+      "sha256": "0b6080b8c3e7a579161d2d495224c0e51c467576cb4c7048b0ab485ef44cc22e",
       "sourceSubdir": "_viewer_no_subdir"
     }
   },
@@ -46,9 +46,24 @@
       }
     },
     "nuget": {
-      "version": "6.14.0",
-      "url": "https://dist.nuget.org/win-x86-commandline/v6.14.0/nuget.exe",
-      "sha256": "92dbed160ddee0f64b901e907439e021211b428e57c089ecc12fc38dcc4bd9a5"
+      "version": "7.9.0",
+      "url": "https://dist.nuget.org/win-x86-commandline/v7.9.0/nuget.exe",
+      "sha256": "992d70cac5b06c38efec91806caba64cdcc07e6d963a0959dbbbaf264d33b800"
+    },
+    "imageMagickWindows": {
+      "version": "7.1.2-34",
+      "url": "https://github.com/ImageMagick/ImageMagick/releases/download/7.1.2-34/ImageMagick-7.1.2-34-Q16-HDRI-x64-dll.exe",
+      "sha256": "eb32ded8b605795dfcb08b8cadbeef6732fe2252af933b54b38df586332e1007"
+    },
+    "sevenZipWindows": {
+      "version": "26.05",
+      "url": "https://github.com/ip7z/7zip/releases/download/26.05/7z2605-x64.exe",
+      "sha256": "fd99e86f57d8f429ef5ed045bf98315af962e2309b0f1ba87a147a44c71647d0"
+    },
+    "innoextractWindows": {
+      "version": "1.9",
+      "url": "https://github.com/dscharrer/innoextract/releases/download/1.9/innoextract-1.9-windows.zip",
+      "sha256": "6989342c9b026a00a72a38f23b62a8e6a22cc5de69805cf47d68ac2fec993065"
     }
   }
 }

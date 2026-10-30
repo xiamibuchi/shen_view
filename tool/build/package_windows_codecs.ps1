@@ -6,8 +6,11 @@ param(
 
 . (Join-Path $PSScriptRoot '../paths.ps1')
 $ErrorActionPreference = 'Stop'
-if (-not $ImageMagickDirectory) { $ImageMagickDirectory = Split-Path (Resolve-ShenViewMagick) }
-if (-not $SevenZipDirectory) { $SevenZipDirectory = Split-Path (Resolve-ShenViewSevenZip) }
+if (-not $ImageMagickDirectory -or -not $SevenZipDirectory) {
+  $lockedCodecs = & (Join-Path $PSScriptRoot 'install_windows_codecs.ps1')
+  if (-not $ImageMagickDirectory) { $ImageMagickDirectory = $lockedCodecs.ImageMagickDirectory }
+  if (-not $SevenZipDirectory) { $SevenZipDirectory = $lockedCodecs.SevenZipDirectory }
+}
 if (-not $ReleaseDirectory) { $ReleaseDirectory = Join-Path $ViewerRoot 'build/windows/x64/runner/Release' }
 $ReleaseDirectory = [IO.Path]::GetFullPath($ReleaseDirectory)
 $codecs = Join-Path $ReleaseDirectory 'codecs'
@@ -76,7 +79,7 @@ $sevenZipSourceVersion = $sevenZipVersion.Replace('.', '')
   'This release includes parts of 7-Zip, primarily licensed under GNU LGPL 2.1 or later.',
   'Copyright (C) Igor Pavlov. Additional BSD and unRAR terms are included in Engine-License.txt.',
   'Project and source downloads: https://www.7-zip.org/',
-  "Official corresponding source: https://www.7-zip.org/a/7z$sevenZipSourceVersion-src.7z",
+  "Official corresponding source: https://github.com/ip7z/7zip/releases/download/$sevenZipVersion/7z$sevenZipSourceVersion-src.tar.xz",
   'The packaged engine is copied from SevenZipDirectory; custom engine suppliers must provide their corresponding source.'
 ) | Set-Content -LiteralPath (Join-Path $sevenZipLicenses 'ENGINE.txt') -Encoding UTF8
 

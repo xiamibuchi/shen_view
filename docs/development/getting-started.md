@@ -6,7 +6,7 @@
 
 | 工具 | 要求 |
 | --- | --- |
-| Flutter / Dart | Flutter 3.47.8 stable / Dart 3.13.7，或更高的兼容稳定版 |
+| Flutter / Dart | Flutter 3.47.9 stable / Dart 3.13.7，或更高的兼容稳定版 |
 | Git / Git LFS | 获取源码、测试资料并运行仓库 hooks |
 | CMake | 构建原生组件 |
 | Windows 工具链 | Visual Studio C++ 工具链、Windows SDK、7-Zip、Git Bash、兼容的 x64 MinGW GCC（如 TDM GCC x64） |

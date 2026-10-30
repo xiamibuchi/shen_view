@@ -36,9 +36,9 @@
   },
   {
     "package": "mingw-w64-x86_64-libplacebo",
-    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-libplacebo-7.360.1-2-any.pkg.tar.zst",
-    "bytes": 761837,
-    "sha256": "4A3E80C3EF2DA2E948764F909C4DFABB2929A1B18FCC4B956C47CF3CF4DC2453",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-libplacebo-7.387.0-1-any.pkg.tar.zst",
+    "bytes": 816126,
+    "sha256": "1D473B23B2B9A39403276734E39F8368593151B658729B4D18B827FF0072A3BF",
     "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-libplacebo"
   },
   {
@@ -106,9 +106,9 @@
   },
   {
     "package": "mingw-w64-x86_64-libwinpthread",
-    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-libwinpthread-14.0.0.r532.gdbbc8e99d-1-any.pkg.tar.zst",
-    "bytes": 34756,
-    "sha256": "231511BB8A0E9BE168930CEC1CE55B2896B3120516CB9D452811DBD335A3C539",
+    "url": "https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-libwinpthread-14.0.0.r569.g34eeafb7d-1-any.pkg.tar.zst",
+    "bytes": 34648,
+    "sha256": "7774D48F1B2727F54C8148E5994A4A8E464DFA2DD5A177E630EBFD522DCBE2C0",
     "source": "https://packages.msys2.org/packages/mingw-w64-x86_64-libwinpthread"
   },
   {
