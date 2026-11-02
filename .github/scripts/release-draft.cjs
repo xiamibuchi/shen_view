@@ -12,6 +12,7 @@ function readArtifact(root, expectedSha) {
     throw new Error('Artifact is not a clean build of the merged commit');
   }
   if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(manifest.version) ||
+      !new RegExp('^' + manifest.version.replaceAll('.', '\\.') + '\\.[0-9]+$').test(manifest.windowsVersion) ||
       manifest.package !== 'ShenView-' + manifest.windowsVersion + '-windows-x64-portable.zip') {
     throw new Error('Unexpected release version or package name');
   }

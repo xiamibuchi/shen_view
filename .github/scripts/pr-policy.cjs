@@ -24,9 +24,20 @@ function validatePullRequest(pr, text) {
   return version;
 }
 
+function validateProgress(next, previous) {
+  const a = next.version.split('.').map(Number).concat(next.build);
+  const b = previous.version.split('.').map(Number).concat(previous.build);
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] > b[i]) return;
+    if (a[i] < b[i]) throw new Error('Version must not decrease relative to the target branch');
+  }
+}
+
 if (require.main === module) {
   const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
   const result = validatePullRequest(event.pull_request, fs.readFileSync('apps/viewer/pubspec.yaml', 'utf8'));
+  const previous = parseVersion(execFileSync('git', ['show', event.pull_request.base.sha + ':apps/viewer/pubspec.yaml'], { encoding: 'utf8' }));
+  validateProgress(result, previous);
   if (event.pull_request.base.ref === 'main') {
     try {
       execFileSync('git', ['rev-parse', '--verify', 'refs/tags/' + result.tag], { stdio: 'ignore' });
@@ -39,4 +50,4 @@ if (require.main === module) {
   console.log('PR policy passed: ' + result.version + '+' + result.build);
 }
 
-module.exports = { parseVersion, validatePullRequest };
+module.exports = { parseVersion, validatePullRequest, validateProgress };
