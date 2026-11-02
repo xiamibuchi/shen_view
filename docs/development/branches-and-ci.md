@@ -41,6 +41,10 @@ Pull request checks 对 main、release/* 的 PR 执行，不对文档改动使�
 
 Windows runner 使用 windows-2025；Flutter 和 Actions 固定版本/提交，第三方构建输入按锁文件校验。
 MSYS2 GCC 和托管 runner 工具随供应方更新，实际版本记录在诊断 artifact；目前不承诺字节级可重复构建。
+云端通过 MSYS2 Mesa Lavapipe 执行 Vulkan 解码测试，设置 SHENVIEW_ALLOW_SOFTWARE_VULKAN=1
+显式允许软件设备；FFmpeg 对照测试也使用同一设备。Mesa 仅为 CI 依赖，不随便携包分发。
+这覆盖解码计算与取消/重建逻辑，真实显卡性能、HDR 显示及驱动兼容仍需实机验收。
+含非 ASCII 文本的 PowerShell 脚本使用 UTF-8 BOM，CI 另用 Windows PowerShell 5.1 解析检查。
 只缓存经过校验的下载文件，不跨 PR 复用本地 CMake/编译输出。缓存不是源码或发布渠道。
 PR 代码在无发布密钥、contents: read 的托管 runner 执行，不使用 pull_request_target 构建 PR。
 fork 首次工作流可能需要 GitHub 的运行批准。

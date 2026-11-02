@@ -121,7 +121,10 @@ static void reset_renderer(Renderer *r)
 static int ensure_renderer(Renderer *r)
 {
     if (r->renderer) return 0;
-    r->vk = pl_vulkan_create(r->log, pl_vulkan_params(.queue_count = 0));
+    const char *software = getenv("SHENVIEW_ALLOW_SOFTWARE_VULKAN");
+    r->vk = pl_vulkan_create(r->log, pl_vulkan_params(
+        .queue_count = 0,
+        .allow_software = software && strcmp(software, "1") == 0));
     if (!r->vk) return -1;
     r->renderer = pl_renderer_create(r->log, r->vk->gpu);
     r->options = pl_options_alloc(r->log);
