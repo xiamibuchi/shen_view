@@ -96,6 +96,7 @@ jobs:
           name: ${{ inputs.artifact-name }}-diagnostics
           path: |
             artifacts/ci
+            build/ffmpeg/windows-x64/runtime
             artifacts/releases/**/portable-ci/smoke-results.json
             artifacts/releases/**/portable-ci/smoke-codecs/codec-results.json
           if-no-files-found: warn

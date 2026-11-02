@@ -512,7 +512,8 @@ Future<void> _open(
 }
 
 Future<void> _wait(WidgetTester tester, bool Function() condition) async {
-  for (var i = 0; i < 100; i++) {
+  // Native decoding uses real time and can run alongside other test processes.
+  for (var i = 0; i < 750; i++) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );

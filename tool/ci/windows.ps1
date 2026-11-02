@@ -27,6 +27,7 @@ try {
   # Tests must use the packaged decoder rather than silently skipping it on a clean runner.
   $env:SHENVIEW_MAGICK = Join-Path $ViewerRoot 'build/windows/x64/runner/Release/codecs/imagemagick/magick.exe'
   if (-not (Test-Path -LiteralPath $env:SHENVIEW_MAGICK)) { throw 'CI 缺少随包 ImageMagick。' }
+  Run node @((Join-Path $PSScriptRoot '../check/hdr_video_smoke.cjs'))
   & (Join-Path $PSScriptRoot '../check/check.ps1') -Flutter $Flutter
   if ($LASTEXITCODE -ne 0) { throw '完整检查失败。' }
   Run cmake @('-S', (Join-Path $RepositoryRoot 'native/tests'), '-B', (Join-Path $NativeBuildRoot 'native-tests'), '-G', (Resolve-ShenViewVisualStudioGenerator), '-A', 'x64')

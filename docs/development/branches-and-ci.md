@@ -35,6 +35,7 @@ Pull request checks 对 main、release/* 的 PR 执行，不对文档改动使�
 - Windows 构建先下载 LFS 样本，使用锁定 Flutter，生成本地化与许可排除表并检查漂移。
 - 检查本 PR 修改的 Dart 文件格式；custom_lint、analyze、Flutter 测试仍覆盖整个工程。
 - 构建 Release 与随包解码器，明确指定测试用 ImageMagick，避免关键用例因缺依赖跳过。
+- 完整测试前单独解码 Dolby Vision 样本；原生失败日志保留 Vulkan 与解码阶段错误。
 - 执行原生队列测试，生成 unsigned Windows x64 portable ZIP，解压后检查版本、哈希、
   许可、便携标记和空用户目录，并在仅系统 PATH 下运行随包解码样本。
 - PR checks 汇总，失败、取消或依赖跳过均不能合并。
@@ -50,7 +51,7 @@ PR 代码在无发布密钥、contents: read 的托管 runner 执行，不使用
 fork 首次工作流可能需要 GitHub 的运行批准。
 
 每个 PR 的便携包 artifact 名含 PR 编号和 run ID，保留 14 天。它是测试包，不代表发布通过。
-诊断 artifact 另含日志、源码 SHA 和工具链版本。
+诊断 artifact 另含日志、源码 SHA、工具链版本及 FFmpeg/helper 运行组件，便于复现云端原生错误。
 
 本地入口：
 
