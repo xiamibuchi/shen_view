@@ -1,4 +1,4 @@
-param([string]$SevenZip = '7z.exe')
+﻿param([string]$SevenZip = '7z.exe')
 
 . (Join-Path $PSScriptRoot '../paths.ps1')
 $ErrorActionPreference = 'Stop'

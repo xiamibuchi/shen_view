@@ -42,6 +42,7 @@
 
 - [开发入门：环境准备、构建运行与检查](development/getting-started.md)
 - [Git 工作流：提交格式与 LFS](development/git-workflow.md)
+- [分支、PR 检查与便携包发布](development/branches-and-ci.md)
 - [配置存储与排查](development/troubleshooting.md)
 - [验证入口与验收边界](development/validation.md)
 - [Windows 真机回归](development/windows-regression.md)

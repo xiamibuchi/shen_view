@@ -1,0 +1,125 @@
+name: Windows portable checks
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+      base-sha:
+        type: string
+        required: true
+      artifact-name:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows checks and portable
+    runs-on: windows-2025
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          lfs: true
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          cache: true
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
+        id: msys
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-mesa mingw-w64-x86_64-vulkan-loader
+      - name: Set native compiler path
+        env:
+          MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
+        run: |
+          Add-Content $env:GITHUB_PATH (Join-Path $env:MSYS_LOCATION 'mingw64/bin')
+          $icd = Join-Path $env:MSYS_LOCATION 'mingw64/share/vulkan/icd.d/lvp_icd.x86_64.json'
+          if (-not (Test-Path -LiteralPath $icd)) { throw 'Missing software Vulkan driver.' }
+          # Elevated runners ignore driver environment overrides. Register the CI-only ICD.
+          $drivers = 'HKLM:\SOFTWARE\Khronos\Vulkan\Drivers'
+          if (-not (Test-Path $drivers)) { New-Item -Path $drivers -Force | Out-Null }
+          New-ItemProperty -Path $drivers -Name $icd -PropertyType DWord -Value 0 -Force | Out-Null
+          Add-Content $env:GITHUB_ENV "VK_DRIVER_FILES=$icd"
+          Add-Content $env:GITHUB_ENV "VK_ICD_FILENAMES=$icd"
+          Add-Content $env:GITHUB_ENV 'SHENVIEW_ALLOW_SOFTWARE_VULKAN=1'
+          Add-Content $env:GITHUB_ENV 'VK_LOADER_DEBUG=error'
+      - name: Verify Vulkan before compiling
+        env:
+          MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
+        run: |
+          & ./tool/check/vulkan_smoke.ps1 -Loader (Join-Path $env:MSYS_LOCATION 'mingw64/bin/vulkan-1.dll')
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            build/windows-codecs/downloads
+            build/ffmpeg/downloads
+          key: windows-downloads-${{ hashFiles('third_party/**/*.lock.json') }}
+      - name: Record toolchain
+        env:
+          MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
+        run: |
+          New-Item -ItemType Directory -Force artifacts/ci | Out-Null
+          flutter --version *> artifacts/ci/flutter.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          gcc --version *> artifacts/ci/gcc.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cmake --version *> artifacts/ci/cmake.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Get-Content -LiteralPath $env:VK_DRIVER_FILES > artifacts/ci/vulkan-driver.json
+          & (Join-Path $env:MSYS_LOCATION 'usr/bin/pacman.exe') -Q > artifacts/ci/msys-packages.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          git rev-parse HEAD > artifacts/ci/source-sha.txt
+      - name: Check Windows PowerShell compatibility
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/powershell_compatibility.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Check, build and verify portable
+        env:
+          CI_BASE_SHA: ${{ inputs.base-sha }}
+        run: |
+          $log = Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci/windows.log'
+          & ./tool/ci/windows.ps1 *>&1 | Tee-Object -FilePath $log
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Upload portable and build records
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: |
+            artifacts/releases/**/portable-ci/*portable.zip
+            artifacts/releases/**/portable-ci/SHA256SUMS.txt
+            artifacts/releases/**/portable-ci/release.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact-name }}-diagnostics
+          path: |
+            artifacts/ci
+            build/ffmpeg/windows-x64/runtime
+            artifacts/releases/**/portable-ci/smoke-results.json
+            artifacts/releases/**/portable-ci/smoke-codecs/codec-results.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Remove CI-only Vulkan registration
+        if: always() && steps.msys.outcome == 'success'
+        env:
+          MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
+        run: |
+          $icd = Join-Path $env:MSYS_LOCATION 'mingw64/share/vulkan/icd.d/lvp_icd.x86_64.json'
+          Remove-ItemProperty -Path 'HKLM:\SOFTWARE\Khronos\Vulkan\Drivers' -Name $icd -ErrorAction SilentlyContinue

@@ -121,7 +121,10 @@ static void reset_renderer(Renderer *r)
 static int ensure_renderer(Renderer *r)
 {
     if (r->renderer) return 0;
-    r->vk = pl_vulkan_create(r->log, pl_vulkan_params(.queue_count = 0));
+    const char *software = getenv("SHENVIEW_ALLOW_SOFTWARE_VULKAN");
+    r->vk = pl_vulkan_create(r->log, pl_vulkan_params(
+        .queue_count = 0,
+        .allow_software = software && strcmp(software, "1") == 0));
     if (!r->vk) return -1;
     r->renderer = pl_renderer_create(r->log, r->vk->gpu);
     r->options = pl_options_alloc(r->log);
@@ -200,19 +203,25 @@ done:
 static int render_frame(State *s, Renderer *r, const Job *job, AVFrame **result)
 {
     int status = -1, mapped = 0;
+    const char *stage = "decode source frame";
     AVFrame *input = av_frame_alloc(), *output = av_frame_alloc();
     pl_tex input_tex[4] = {0}, output_tex[4] = {0};
     struct pl_frame image = {0}, target = {0};
     if (!input || !output || first_frame(s, job, input) < 0 ||
         input->width != job->source_width || input->height != job->source_height) goto done;
     if (cancelled(s)) goto done;
+    stage = "read Dolby Vision metadata";
     const AVFrameSideData *side = av_frame_get_side_data(input, AV_FRAME_DATA_DOVI_METADATA);
     if (!side || side->size < sizeof(AVDOVIMetadata)) goto done;
     const AVDOVIRpuDataHeader *rpu = av_dovi_get_header((AVDOVIMetadata *)side->data);
-    if (!rpu->disable_residual_flag || ensure_renderer(r) < 0 || cancelled(s)) goto done;
+    if (!rpu->disable_residual_flag) goto done;
+    stage = "initialize Vulkan renderer";
+    if (ensure_renderer(r) < 0 || cancelled(s)) goto done;
     pl_gpu gpu = r->vk->gpu;
+    stage = "map source frame";
     if (!pl_map_avframe_ex(gpu, &image, pl_avframe_params(.frame = input, .tex = input_tex))) goto done;
     mapped = 1;
+    stage = "allocate output frame";
     if (av_frame_copy_props(output, input) < 0) goto done;
     output->format = AV_PIX_FMT_RGBA64LE;
     output->width = job->width;
@@ -230,6 +239,7 @@ static int render_frame(State *s, Renderer *r, const Job *job, AVFrame **result)
     av_frame_remove_side_data(output, AV_FRAME_DATA_DISPLAYMATRIX);
     if (av_frame_get_buffer(output, 32) < 0) goto done;
     if (!pl_frame_recreate_from_avframe(gpu, &target, output_tex, output)) goto done;
+    stage = "render and download frame";
     // Independent stills must not inherit peak/temporal data from the last file.
     pl_renderer_flush_cache(r->renderer);
     if (cancelled(s) || !pl_render_image(r->renderer, &image, &target, &r->options->params) ||
@@ -238,6 +248,7 @@ static int render_frame(State *s, Renderer *r, const Job *job, AVFrame **result)
     output = NULL;
     status = 0;
 done:
+    if (status < 0 && !cancelled(s)) fprintf(stderr, "HDR worker failed to %s\n", stage);
     if (r->vk) {
         pl_gpu gpu = r->vk->gpu;
         if (mapped) pl_unmap_avframe(gpu, &image);

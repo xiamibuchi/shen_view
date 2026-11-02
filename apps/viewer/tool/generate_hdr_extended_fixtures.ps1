@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$Dart = 'dart',
   [string]$Ffmpeg = 'ffmpeg',
   [string]$DoviTool = '../../build/hdr-codecs/dovi-tool/dovi_tool.exe'

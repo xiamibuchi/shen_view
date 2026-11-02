@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$DownloadCache = '',
   [string]$CompilerDirectory = '',
   [string]$Bash = '',
@@ -6,11 +6,6 @@ param(
 )
 . (Join-Path $PSScriptRoot '../paths.ps1')
 $ErrorActionPreference = 'Stop'
-# Flutter can launch Windows PowerShell with PowerShell 7's module search path.
-if ($PSVersionTable.PSEdition -eq 'Desktop') {
-  Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Utility/Microsoft.PowerShell.Utility.psd1')
-  Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Management/Microsoft.PowerShell.Management.psd1')
-}
 $recipe = Join-Path $RepositoryRoot 'third_party/ffmpeg'
 $work = Join-Path $NativeBuildRoot 'ffmpeg/windows-x64'
 $runtime = Join-Path $work 'runtime'
@@ -50,7 +45,7 @@ function Update-RuntimeNotices {
     Remove-Item -LiteralPath $absolute -Recurse -Force
   }
 }
-$identity = ((@('source.lock.json', 'windows-packages.lock.json', 'profile.sh', 'build-windows.sh', 'patches/libplacebo-lazy-vulkan.patch') | ForEach-Object {
+$identity = ((@('source.lock.json', 'windows-packages.lock.json', 'profile.sh', 'build-windows.sh', 'patches/libplacebo-lazy-vulkan.patch', 'patches/libplacebo-software-vulkan.patch') | ForEach-Object {
   (Get-FileHash -LiteralPath (Join-Path $recipe $_) -Algorithm SHA256).Hash
 }) -join ':')
 if (Test-Path -LiteralPath $manifestPath) {
