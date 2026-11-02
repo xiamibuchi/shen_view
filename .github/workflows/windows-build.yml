@@ -49,9 +49,19 @@ jobs:
           Add-Content $env:GITHUB_PATH (Join-Path $env:MSYS_LOCATION 'mingw64/bin')
           $icd = Join-Path $env:MSYS_LOCATION 'mingw64/share/vulkan/icd.d/lvp_icd.x86_64.json'
           if (-not (Test-Path -LiteralPath $icd)) { throw 'Missing software Vulkan driver.' }
+          # Elevated runners ignore driver environment overrides. Register the CI-only ICD.
+          $drivers = 'HKLM:\SOFTWARE\Khronos\Vulkan\Drivers'
+          if (-not (Test-Path $drivers)) { New-Item -Path $drivers -Force | Out-Null }
+          New-ItemProperty -Path $drivers -Name $icd -PropertyType DWord -Value 0 -Force | Out-Null
           Add-Content $env:GITHUB_ENV "VK_DRIVER_FILES=$icd"
           Add-Content $env:GITHUB_ENV "VK_ICD_FILENAMES=$icd"
           Add-Content $env:GITHUB_ENV 'SHENVIEW_ALLOW_SOFTWARE_VULKAN=1'
+          Add-Content $env:GITHUB_ENV 'VK_LOADER_DEBUG=error'
+      - name: Verify Vulkan before compiling
+        env:
+          MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
+        run: |
+          & ./tool/check/vulkan_smoke.ps1 -Loader (Join-Path $env:MSYS_LOCATION 'mingw64/bin/vulkan-1.dll')
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
@@ -106,3 +116,10 @@ jobs:
             artifacts/releases/**/portable-ci/smoke-codecs/codec-results.json
           if-no-files-found: warn
           retention-days: 14
+      - name: Remove CI-only Vulkan registration
+        if: always() && steps.msys.outcome == 'success'
+        env:
+          MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
+        run: |
+          $icd = Join-Path $env:MSYS_LOCATION 'mingw64/share/vulkan/icd.d/lvp_icd.x86_64.json'
+          Remove-ItemProperty -Path 'HKLM:\SOFTWARE\Khronos\Vulkan\Drivers' -Name $icd -ErrorAction SilentlyContinue

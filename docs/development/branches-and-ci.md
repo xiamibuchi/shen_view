@@ -45,6 +45,8 @@ MSYS2 安装前更新软件包数据库与基础工具；GCC、Mesa 和托管 ru
 实际包版本记录在诊断 artifact 的 msys-packages.txt；目前不承诺字节级可重复构建。
 云端通过 MSYS2 Mesa Lavapipe 执行 Vulkan 解码测试，设置 SHENVIEW_ALLOW_SOFTWARE_VULKAN=1
 显式允许软件设备；FFmpeg 对照测试也使用同一设备。Mesa 仅为 CI 依赖，不随便携包分发。
+管理员进程会忽略 Vulkan 的驱动环境变量，因此 CI 在临时 runner 的注册表登记软件驱动，
+构建前检查实例创建和设备枚举，结束后移除登记；不修改开发者本机注册表。
 这覆盖解码计算与取消/重建逻辑，真实显卡性能、HDR 显示及驱动兼容仍需实机验收。
 含非 ASCII 文本的 PowerShell 脚本使用 UTF-8 BOM，CI 另用 Windows PowerShell 5.1 解析检查。
 只缓存经过校验的下载文件，不跨 PR 复用本地 CMake/编译输出。缓存不是源码或发布渠道。
