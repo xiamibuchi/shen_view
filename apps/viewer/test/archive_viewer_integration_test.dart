@@ -2859,6 +2859,8 @@ void main() {
           expect(transform.value, before);
           expect(changes, 0);
           await tester.pump();
+          expect(transform.value, before);
+          expect(changes, 0);
           expect(await _pixels(tester, '$label-after-inertia'), pixels);
         } finally {
           transform.removeListener(onTransform);
@@ -3726,6 +3728,16 @@ Future<void> _waitForSelectedImage(
   WidgetTester tester, {
   int minimum = 1,
 }) async {
+  // Bitmap decoding can finish before metadata sizes the viewport. A pixel
+  // baseline must include that layout update, not just the first painted frame.
+  final controller = _bar(tester)!.controller;
+  await _waitFor(
+    tester,
+    () =>
+        controller.currentEntry != null &&
+        _bar(tester)!.resources.cachedMetadata(controller.currentEntry!) !=
+            null,
+  );
   await _waitForImage(tester);
   // The old transition has ended by now; require the current spread to paint.
   await _waitFor(
@@ -3742,19 +3754,30 @@ Future<void> _waitForSelectedImage(
             .length >=
         minimum,
   );
-  final controller = _bar(tester)!.controller;
-  if (!controller.isArchiveView) return;
   await _waitFor(
     tester,
     () => tester
-        .widgetList<RawImage>(
+        .widgetList<ResourceImage>(
           find.descendant(
-            of: find.byKey(ValueKey('source:${controller.currentEntry!.id}')),
-            matching: find.byType(RawImage),
+            of: find.byType(ZoomableViewport),
+            matching: find.byType(ResourceImage),
           ),
         )
-        .any((image) => image.image != null),
+        .every((image) => image.resources.cachedMetadata(image.entry) != null),
   );
+  if (controller.isArchiveView) {
+    await _waitFor(
+      tester,
+      () => tester
+          .widgetList<RawImage>(
+            find.descendant(
+              of: find.byKey(ValueKey('source:${controller.currentEntry!.id}')),
+              matching: find.byType(RawImage),
+            ),
+          )
+          .any((image) => image.image != null),
+    );
+  }
   await _drain(tester);
 }
 
