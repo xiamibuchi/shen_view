@@ -6,11 +6,6 @@
 )
 . (Join-Path $PSScriptRoot '../paths.ps1')
 $ErrorActionPreference = 'Stop'
-# Flutter can launch Windows PowerShell with PowerShell 7's module search path.
-if ($PSVersionTable.PSEdition -eq 'Desktop') {
-  Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Utility/Microsoft.PowerShell.Utility.psd1')
-  Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Management/Microsoft.PowerShell.Management.psd1')
-}
 $recipe = Join-Path $RepositoryRoot 'third_party/ffmpeg'
 $work = Join-Path $NativeBuildRoot 'ffmpeg/windows-x64'
 $runtime = Join-Path $work 'runtime'

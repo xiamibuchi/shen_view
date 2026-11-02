@@ -18,4 +18,8 @@ foreach ($relative in $files) {
   [Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null
   if ($errors.Count) { throw "Invalid PowerShell script: $relative`n$errors" }
 }
+. (Join-Path $root 'tool/paths.ps1')
+if (-not (Get-FileHash -LiteralPath (Join-Path $root 'LICENSE') -Algorithm SHA256).Hash) {
+  throw 'System hash module is unavailable after loading the shared build entry.'
+}
 Write-Host "PowerShell $($PSVersionTable.PSVersion): $($files.Count) scripts passed."
