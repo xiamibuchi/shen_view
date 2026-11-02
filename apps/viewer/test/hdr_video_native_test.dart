@@ -63,12 +63,6 @@ void main() {
       final filter =
           'libplacebo=w=$width:h=$height:apply_dolbyvision=1:format=rgba64le:colorspace=0:color_primaries=9:color_trc=16:range=2:tonemapping=clip:peak_detect=0';
       final baseline = await CodecProcess.run(ffmpeg!, [
-        if (Platform.environment['SHENVIEW_ALLOW_SOFTWARE_VULKAN'] == '1') ...[
-          '-init_hw_device',
-          'vulkan=ci:0',
-          '-filter_hw_device',
-          'ci',
-        ],
         '-v',
         'error',
         '-nostdin',

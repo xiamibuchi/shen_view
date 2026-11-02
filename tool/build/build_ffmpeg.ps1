@@ -45,7 +45,7 @@ function Update-RuntimeNotices {
     Remove-Item -LiteralPath $absolute -Recurse -Force
   }
 }
-$identity = ((@('source.lock.json', 'windows-packages.lock.json', 'profile.sh', 'build-windows.sh', 'patches/libplacebo-lazy-vulkan.patch') | ForEach-Object {
+$identity = ((@('source.lock.json', 'windows-packages.lock.json', 'profile.sh', 'build-windows.sh', 'patches/libplacebo-lazy-vulkan.patch', 'patches/libplacebo-software-vulkan.patch') | ForEach-Object {
   (Get-FileHash -LiteralPath (Join-Path $recipe $_) -Algorithm SHA256).Hash
 }) -join ':')
 if (Test-Path -LiteralPath $manifestPath) {
