@@ -1,0 +1,91 @@
+name: Windows portable checks
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+      base-sha:
+        type: string
+        required: true
+      artifact-name:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows checks and portable
+    runs-on: windows-2025
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          lfs: true
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          cache: true
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
+        id: msys
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc
+      - name: Set native compiler path
+        env:
+          MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
+        run: |
+          Add-Content $env:GITHUB_PATH (Join-Path $env:MSYS_LOCATION 'mingw64/bin')
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            build/windows-codecs/downloads
+            build/ffmpeg/downloads
+          key: windows-downloads-${{ hashFiles('third_party/**/*.lock.json') }}
+      - name: Record toolchain
+        run: |
+          New-Item -ItemType Directory -Force artifacts/ci | Out-Null
+          flutter --version *> artifacts/ci/flutter.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          gcc --version *> artifacts/ci/gcc.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cmake --version *> artifacts/ci/cmake.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          git rev-parse HEAD > artifacts/ci/source-sha.txt
+      - name: Check, build and verify portable
+        env:
+          CI_BASE_SHA: ${{ inputs.base-sha }}
+        run: |
+          & ./tool/ci/windows.ps1 *>&1 | Tee-Object artifacts/ci/windows.log
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Upload portable and build records
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: |
+            artifacts/releases/**/portable-ci/*portable.zip
+            artifacts/releases/**/portable-ci/SHA256SUMS.txt
+            artifacts/releases/**/portable-ci/release.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact-name }}-diagnostics
+          path: |
+            artifacts/ci
+            artifacts/releases/**/portable-ci/smoke-results.json
+            artifacts/releases/**/portable-ci/smoke-codecs/codec-results.json
+          if-no-files-found: warn
+          retention-days: 14

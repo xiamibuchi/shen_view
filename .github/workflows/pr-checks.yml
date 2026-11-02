@@ -1,0 +1,65 @@
+name: Pull request checks
+
+on:
+  pull_request:
+    branches: [main, 'release/**']
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    name: PR policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: node --test .github/scripts/*.test.cjs
+      - run: node .github/scripts/pr-policy.cjs
+  commits:
+    name: Commit message format (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test commit validator and hooks
+        shell: bash
+        run: sh tool/check/commit_message_test.sh
+      - name: Check PR commits
+        shell: bash
+        env:
+          COMMIT_EVENT_NAME: pull_request
+          COMMIT_PR_BASE: ${{ github.event.pull_request.base.sha }}
+          COMMIT_PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: sh tool/check/commit_message.sh --event
+  windows:
+    needs: policy
+    uses: ./.github/workflows/windows-build.yml
+    with:
+      ref: ${{ github.ref }}
+      base-sha: ${{ github.event.pull_request.base.sha }}
+      artifact-name: windows-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
+  gate:
+    name: PR checks
+    if: always()
+    needs: [policy, commits, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all checks
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          node -e "const jobs=JSON.parse(process.env.RESULTS); if(Object.values(jobs).some(j=>j.result!=='success')) process.exit(1);"

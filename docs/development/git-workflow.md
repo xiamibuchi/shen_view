@@ -1,6 +1,7 @@
 # Git 工作流
 
 首次配置 hooks 和下载测试资料见[准备仓库](getting-started.md#准备仓库)。本页说明提交格式、文件大小规则及检查工具。
+分支、PR 门禁和便携包发布见[分支与 CI](branches-and-ci.md)。
 
 ## 检查工具环境
 
@@ -41,7 +42,7 @@ sh tool/check/commit_message.sh --range BASE HEAD
 ```
 
 本地 hook 可被 `--no-verify` 绕过。若需阻止未通过检查的 PR 合并，须在 GitHub 分支规则中
-将三个 `Commit message format` 检查设为必需，并限制直接推送和绕过权限。
+将汇总的 `PR checks` 设为必需，并限制直接推送和绕过权限；它包含三个平台的提交检查。
 
 ## 文件大小与 Git LFS
 
