@@ -40,6 +40,7 @@ jobs:
         id: msys
         with:
           msystem: MINGW64
+          update: true
           install: mingw-w64-x86_64-gcc mingw-w64-x86_64-mesa mingw-w64-x86_64-vulkan-loader
       - name: Set native compiler path
         env:
@@ -58,6 +59,8 @@ jobs:
             build/ffmpeg/downloads
           key: windows-downloads-${{ hashFiles('third_party/**/*.lock.json') }}
       - name: Record toolchain
+        env:
+          MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
         run: |
           New-Item -ItemType Directory -Force artifacts/ci | Out-Null
           flutter --version *> artifacts/ci/flutter.txt
@@ -67,6 +70,8 @@ jobs:
           cmake --version *> artifacts/ci/cmake.txt
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           Get-Content -LiteralPath $env:VK_DRIVER_FILES > artifacts/ci/vulkan-driver.json
+          & (Join-Path $env:MSYS_LOCATION 'usr/bin/pacman.exe') -Q > artifacts/ci/msys-packages.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           git rev-parse HEAD > artifacts/ci/source-sha.txt
       - name: Check Windows PowerShell compatibility
         run: |
