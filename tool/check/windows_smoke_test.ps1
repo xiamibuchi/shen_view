@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$Executable = 'build/windows/x64/runner/Release/ShenView.exe',
   [string]$InputPath = 'testdata/formats/format_static.png',
   [string]$OutputDirectory = '../../artifacts/windows-smoke',

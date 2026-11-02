@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([Parameter(Mandatory)][string]$InstallRoot,[Parameter(Mandatory)][string]$OutputDirectory)
 
 . (Join-Path $PSScriptRoot '../paths.ps1')

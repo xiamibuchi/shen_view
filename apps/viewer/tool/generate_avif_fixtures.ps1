@@ -1,4 +1,4 @@
-param([string]$Helper = '../../build/avif-codecs/bin/viewer_avif_animation.exe')
+﻿param([string]$Helper = '../../build/avif-codecs/bin/viewer_avif_animation.exe')
 $ErrorActionPreference = 'Stop'
 if (-not (Test-Path -LiteralPath $Helper)) {
   $Helper = '../../build/hdr-codecs/bin/viewer_avif_animation.exe'

@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$Flutter = 'flutter',
   [string]$OutputDirectory = '',
   [string[]]$TestFiles = @()

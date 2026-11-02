@@ -1,4 +1,4 @@
-param([string]$ReleaseDirectory = 'build/windows/x64/runner/Release')
+﻿param([string]$ReleaseDirectory = 'build/windows/x64/runner/Release')
 . (Join-Path $PSScriptRoot '../paths.ps1')
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing

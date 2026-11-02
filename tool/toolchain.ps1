@@ -1,4 +1,4 @@
-function Resolve-ShenViewTool {
+﻿function Resolve-ShenViewTool {
   param([string]$Command, [string[]]$Candidates = @(), [switch]$Optional)
   if ([IO.Path]::IsPathRooted($Command) -or $Command.Contains('/') -or $Command.Contains([char]92)) {
     $Candidates = @()

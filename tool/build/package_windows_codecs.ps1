@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$ReleaseDirectory = '',
   [string]$ImageMagickDirectory = '',
   [string]$SevenZipDirectory = ''

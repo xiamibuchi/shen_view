@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$CMake = 'cmake',
   [string]$Generator = '',
   [string]$Architecture = 'x64',

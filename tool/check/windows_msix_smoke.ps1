@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([Parameter(Mandatory)][string]$ReleaseDirectory,[string]$WindowsSdkBin = '')
 
 . (Join-Path $PSScriptRoot '../paths.ps1')

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([string]$Flutter = 'flutter')
 
 . (Join-Path $PSScriptRoot '../paths.ps1')
