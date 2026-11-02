@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:shen_view/src/application/decode_request.dart';
 import 'package:shen_view/src/application/folder_index_service.dart';
 import 'package:shen_view/src/application/folder_order_provider.dart';
 import 'package:shen_view/src/domain/folder_browse_mode.dart';
@@ -9,6 +10,19 @@ import 'package:shen_view/src/domain/viewer_settings.dart';
 import 'package:shen_view/src/domain/image_format.dart';
 
 void main() {
+  test('cancellation during isolate startup reports only one error', () async {
+    final root = await Directory.systemTemp.createTemp('shen_view-cancel');
+    addTearDown(() => root.delete(recursive: true));
+    await expectLater(
+      FolderIndexService().indexResult(
+        root.path,
+        request: _CancelOnRegistration(),
+      ),
+      throwsA(isA<DecodeCancelled>()),
+    );
+    await Future<void>.delayed(Duration.zero);
+  });
+
   test(
     'folder indexing preserves camera RAW routes for TIFF containers',
     () async {
@@ -343,6 +357,14 @@ String _join(String base, String child) =>
     Directory(base).uri.resolve(child).toFilePath();
 
 String _slash(String path) => path.replaceAll(String.fromCharCode(92), '/');
+
+class _CancelOnRegistration extends DecodeRequest {
+  @override
+  void addCancelListener(void Function() listener) {
+    cancel();
+    super.addCancelListener(listener);
+  }
+}
 
 class _FakeFolderOrderProvider implements FolderOrderProvider {
   const _FakeFolderOrderProvider(this.paths);
