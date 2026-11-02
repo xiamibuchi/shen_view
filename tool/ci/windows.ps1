@@ -33,7 +33,7 @@ try {
   Run cmake @('--build', (Join-Path $NativeBuildRoot 'native-tests'), '--config', 'Release', '--parallel', '2')
   Run ctest @('--test-dir', (Join-Path $NativeBuildRoot 'native-tests'), '-C', 'Release', '--output-on-failure')
   & (Join-Path $PSScriptRoot '../release/package_windows_portable.ps1') -Flutter $Flutter -SkipBuild -SkipCodecs
-  $version = [regex]::Match((Get-Content pubspec.yaml -Raw), '(?m)^version:s*(d+.d+.d+)+(d+)s*$')
+  $version = [regex]::Match((Get-Content pubspec.yaml -Raw), '(?m)^version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$')
   if (-not $version.Success) { throw '无法读取发布版本。' }
   $output = Join-Path $ArtifactRoot ('releases/' + $version.Groups[1].Value + '.' + $version.Groups[2].Value + '/windows-x64/portable-ci')
   & (Join-Path $PSScriptRoot '../check/windows_portable_smoke.ps1') -ReleaseDirectory $output

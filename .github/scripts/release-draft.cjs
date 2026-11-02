@@ -8,7 +8,7 @@ function readArtifact(root, expectedSha) {
   if (manifests.length !== 1) throw new Error('Expected exactly one release manifest');
   const directory = path.dirname(path.join(root, manifests[0]));
   const manifest = JSON.parse(fs.readFileSync(path.join(directory, 'release.json'), 'utf8'));
-  if (manifest.sourceCommit !== expectedSha || manifest.sourceDirty || manifest.installerType !== 'portable') {
+  if (manifest.sourceCommit !== expectedSha || manifest.sourceDirty !== false || manifest.installerType !== 'portable') {
     throw new Error('Artifact is not a clean build of the merged commit');
   }
   if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(manifest.version) ||
