@@ -33,6 +33,7 @@ import 'package:shen_view/src/domain/view_scale_mode.dart';
 import 'package:shen_view/src/presentation/archive_password_dialog.dart';
 import 'package:shen_view/src/presentation/comic_strip_viewport.dart';
 import 'package:shen_view/src/presentation/hdr_image_view.dart';
+import 'package:shen_view/src/presentation/image_navigation_transition.dart';
 import 'package:shen_view/src/presentation/theme/app_theme.dart';
 import 'package:shen_view/src/presentation/source_image_view.dart';
 import 'package:shen_view/src/presentation/viewer_bottom_bar.dart';
@@ -3738,33 +3739,52 @@ Future<void> _waitForSelectedImage(
         _bar(tester)!.resources.cachedMetadata(controller.currentEntry!) !=
             null,
   );
+  final metadataBuilders = find.ancestor(
+    of: find.byType(ZoomableViewport),
+    matching: find.byWidgetPredicate(
+      (widget) => widget is FutureBuilder<Object?>,
+    ),
+  );
+  if (metadataBuilders.evaluate().isNotEmpty) {
+    final metadata = tester
+        .widget<FutureBuilder<Object?>>(metadataBuilders.first)
+        .future;
+    var ready = metadata == null;
+    Object? failure;
+    unawaited(
+      metadata?.then<void>(
+        (_) => ready = true,
+        onError: (Object error, StackTrace stack) {
+          failure = error;
+          ready = true;
+        },
+      ),
+    );
+    await _waitFor(tester, () => ready);
+    expect(failure, isNull);
+  }
   await _waitForImage(tester);
-  // The old transition has ended by now; require the current spread to paint.
-  await _waitFor(
-    tester,
-    () =>
-        tester
+  // AnimatedSwitcher retains outgoing pages; only the current child can prove
+  // that the selected spread is painted.
+  await _waitFor(tester, () {
+    final viewport = find.byType(ZoomableViewport);
+    final transitions = find.descendant(
+      of: viewport,
+      matching: find.byType(ImageNavigationTransition),
+    );
+    final current = transitions.evaluate().isEmpty
+        ? viewport
+        : find.byWidget(
+            tester.widget<ImageNavigationTransition>(transitions.first).child,
+          );
+    return tester
             .widgetList<RawImage>(
-              find.descendant(
-                of: find.byType(ZoomableViewport),
-                matching: find.byType(RawImage),
-              ),
+              find.descendant(of: current, matching: find.byType(RawImage)),
             )
             .where((image) => image.image != null)
             .length >=
-        minimum,
-  );
-  await _waitFor(
-    tester,
-    () => tester
-        .widgetList<ResourceImage>(
-          find.descendant(
-            of: find.byType(ZoomableViewport),
-            matching: find.byType(ResourceImage),
-          ),
-        )
-        .every((image) => image.resources.cachedMetadata(image.entry) != null),
-  );
+        minimum;
+  });
   if (controller.isArchiveView) {
     await _waitFor(
       tester,
