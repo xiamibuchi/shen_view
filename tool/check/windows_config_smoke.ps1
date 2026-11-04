@@ -16,11 +16,15 @@ $project = $ViewerRoot
 $release = [IO.Path]::GetFullPath((Join-Path $project $ReleaseDirectory))
 $runRoot = [IO.Path]::GetFullPath((Join-Path $project ('build/config-smoke-' + [Guid]::NewGuid().ToString('N'))))
 New-Item -ItemType Directory -Path $runRoot | Out-Null
-Get-ChildItem -LiteralPath $release | Where-Object { $_.Name -notlike 'settings.json*' } | ForEach-Object {
+Get-ChildItem -LiteralPath $release | Where-Object { $_.Name -notlike 'settings.json*' -and $_.Name -notin @('user-data', 'installation-mode') } | ForEach-Object {
   Copy-Item -LiteralPath $_.FullName -Destination $runRoot -Recurse
 }
 $executable = Join-Path $runRoot 'ShenView.exe'
-$configPath = Join-Path $runRoot 'settings.json'
+# Force the private fixture to keep settings and instance state beside its copy.
+[IO.File]::WriteAllText((Join-Path $runRoot 'installation-mode'), 'portable')
+$dataRoot = Join-Path $runRoot 'user-data'
+New-Item -ItemType Directory -Path $dataRoot -Force | Out-Null
+$configPath = Join-Path $dataRoot 'settings.json'
 $instancePath = $configPath + '.instances'
 $imagePath = Join-Path $runRoot 'startup.png'
 $bitmap = [Drawing.Bitmap]::new(64,64)

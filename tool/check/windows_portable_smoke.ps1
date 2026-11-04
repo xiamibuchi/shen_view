@@ -27,7 +27,10 @@ if (@(Get-ChildItem -LiteralPath (Join-Path $work 'user-data') -Force).Count) { 
 $app = (Get-Item -LiteralPath (Join-Path $work 'ShenView.exe')).VersionInfo
 $version = @($app.FileMajorPart, $app.FileMinorPart, $app.FileBuildPart, $app.FilePrivatePart) -join '.'
 if ($version -ne $manifest.windowsVersion) { throw 'EXE 版本与便携包清单不一致。' }
-if ((Get-FileHash -LiteralPath (Join-Path $work 'LICENSE')).Hash -ne (Get-FileHash -LiteralPath (Join-Path $RepositoryRoot 'LICENSE')).Hash) { throw '项目许可不一致。' }
+# Git checkouts may use LF or CRLF; compare the license text across platforms.
+$packagedLicense = [IO.File]::ReadAllText((Join-Path $work 'LICENSE')).Replace([string][char]13 + [char]10, [string][char]10)
+$sourceLicense = [IO.File]::ReadAllText((Join-Path $RepositoryRoot 'LICENSE')).Replace([string][char]13 + [char]10, [string][char]10)
+if ($packagedLicense -cne $sourceLicense) { throw '项目许可不一致。' }
 $ffmpeg = Join-Path $work 'codecs/ffmpeg'
 $runtime = Get-Content -LiteralPath (Join-Path $ffmpeg 'manifest.json') -Raw | ConvertFrom-Json
 foreach ($file in $runtime.files) {

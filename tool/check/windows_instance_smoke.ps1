@@ -20,11 +20,15 @@ $release = [IO.Path]::GetFullPath((Join-Path $project $ReleaseDirectory))
 $runRoot = Join-Path $project ('build/instance-smoke-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $runRoot | Out-Null
 # Use a private portable copy; never alter the user's running viewer/config.
-Get-ChildItem -LiteralPath $release | Where-Object { $_.Name -notlike 'settings.json*' } | ForEach-Object {
+Get-ChildItem -LiteralPath $release | Where-Object { $_.Name -notlike 'settings.json*' -and $_.Name -notin @('user-data', 'installation-mode') } | ForEach-Object {
   Copy-Item -LiteralPath $_.FullName -Destination $runRoot -Recurse
 }
 $executable = Join-Path $runRoot 'ShenView.exe'
-$configPath = Join-Path $runRoot 'settings.json'
+# Force the private fixture to keep settings and instance state beside its copy.
+[IO.File]::WriteAllText((Join-Path $runRoot 'installation-mode'), 'portable')
+$dataRoot = Join-Path $runRoot 'user-data'
+New-Item -ItemType Directory -Path $dataRoot -Force | Out-Null
+$configPath = Join-Path $dataRoot 'settings.json'
 $tracked = [Collections.Generic.List[Diagnostics.Process]]::new()
 $results = [Collections.Generic.List[string]]::new()
 function Assert-True($Value, [string]$Message) {
@@ -75,7 +79,9 @@ try {
   $first = Launch-Viewer
   Wait-Viewer $first
   $second = Launch-Viewer $imagePath
-  Assert-True ($second.WaitForExit(20000) -and $second.ExitCode -eq 0) '单进程重复启动完成转发并退出'
+  $forwarded = $second.WaitForExit(20000)
+  $forwardExit = if ($forwarded) { $second.ExitCode } else { 'still running' }
+  Assert-True ($forwarded -and $second.ExitCode -eq 0) ('单进程重复启动完成转发并退出，实际退出码：' + $forwardExit)
   Wait-Until { ((Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json).session.recentFile) -eq $imagePath } '文件请求未交给已有窗口'
   Assert-True (-not $first.HasExited) '已有窗口接收中文空格路径后保持运行'
   [void][InstanceSmokeWindow]::ShowWindow($first.MainWindowHandle, 6)
