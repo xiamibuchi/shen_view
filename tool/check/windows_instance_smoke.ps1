@@ -64,7 +64,7 @@ function Save-Window([Diagnostics.Process]$Process, [string]$Name) {
 }
 function Set-Mode([string]$Mode) {
   # Edit only this isolated fixture while its viewer is idle.
-  $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+  $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
   $config.settings | Add-Member -NotePropertyName instanceMode -NotePropertyValue $Mode -Force
   [IO.File]::WriteAllText($configPath, ($config | ConvertTo-Json -Depth 30))
 }
@@ -82,7 +82,7 @@ try {
   $forwarded = $second.WaitForExit(20000)
   $forwardExit = if ($forwarded) { $second.ExitCode } else { 'still running' }
   Assert-True ($forwarded -and $second.ExitCode -eq 0) ('单进程重复启动完成转发并退出，实际退出码：' + $forwardExit)
-  Wait-Until { ((Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json).session.recentFile) -eq $imagePath } '文件请求未交给已有窗口'
+  Wait-Until { ((Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json).session.recentFile) -eq $imagePath } '文件请求未交给已有窗口'
   Assert-True (-not $first.HasExited) '已有窗口接收中文空格路径后保持运行'
   [void][InstanceSmokeWindow]::ShowWindow($first.MainWindowHandle, 6)
   $third = Launch-Viewer
