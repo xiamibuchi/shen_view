@@ -15,11 +15,28 @@ $session = Join-Path $work 'session'
 New-Item -ItemType Directory -Path $session -Force | Out-Null
 $key = 'HKCU:/Software/Microsoft/Windows/CurrentVersion/Uninstall/ShenView.Inno7.Validation_is1'
 $recoveryRoot=Join-Path $env:LOCALAPPDATA 'ShenView-Inno7-Validation/Installer/Transactions'
+$existingRecovery=@(Get-ChildItem -LiteralPath $recoveryRoot -Force -ErrorAction SilentlyContinue)
+$existingRecoveryNames=@($existingRecovery | ForEach-Object {$_.Name})
+$existingRecoveryJournals=@{}
+foreach($entry in $existingRecovery) {
+  $journalPath=Join-Path $entry.FullName 'journal.ini'
+  if(Test-Path -LiteralPath $journalPath -PathType Leaf) {
+    $existingRecoveryJournals[$entry.Name]=(Get-FileHash -LiteralPath $journalPath).Hash
+  }
+}
 $results = [Collections.Generic.List[object]]::new()
 $shell = New-Object -ComObject WScript.Shell
 $desktop = Join-Path ([Environment]::GetFolderPath('Desktop')) 'ShenView Inno7 Validation.lnk'
 $start = Join-Path ([Environment]::GetFolderPath('Programs')) 'ShenView Inno7 Validation.lnk'
 function Assert([bool]$Condition,[string]$Message) { if (-not $Condition) {throw $Message} }
+function Assert-RecoveryUnchanged {
+  $current=@(Get-ChildItem -LiteralPath $recoveryRoot -Force -ErrorAction SilentlyContinue)
+  Assert ((@($current | ForEach-Object {$_.Name} | Sort-Object) -join '|') -eq (@($existingRecoveryNames | Sort-Object) -join '|')) '本轮验证留下了事务副本，或更改了已有恢复条目。'
+  foreach($name in $existingRecoveryJournals.Keys) {
+    Assert ((Get-FileHash -LiteralPath (Join-Path $recoveryRoot ($name+'/journal.ini'))).Hash -eq $existingRecoveryJournals[$name]) '已有恢复副本的状态被修改。'
+  }
+  if($existingRecovery.Count -eq 0) {Assert (-not(Test-Path -LiteralPath $recoveryRoot)) '空的临时事务目录未清理。'}
+}
 function Run-Operation([string]$Program,[string]$Root,[string]$Name,[string[]]$Extra=@()) {
   $rootArgument = if ($Program -eq $worker) {'/ROOT='} else {'/DIR='}
   $arguments = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',($rootArgument+'"'+$Root+'"'),
@@ -75,11 +92,11 @@ foreach($stage in @('files','associations','shortcuts','cleanup')) {
   Assert-Original
   Assert ((Get-Content (Join-Path $session 'status.ini') -Raw).Contains('state=failed')) '重装失败的恢复状态不正确。'
 }
-Assert (-not(Test-Path $recoveryRoot)) '恢复完成后仍保留了不需要的事务副本。'
+Assert-RecoveryUnchanged
 Assert ((Run-Operation $engine $original 'failed-restore-retains-recovery-copy' @('/FAIL=restore')) -ne 0) '恢复故障未失败。'
 $recoveryState=Get-Content (Join-Path $session 'status.ini') -Raw
 Assert ($recoveryState.Contains('state=recovery-failed')) '恢复未完成没有单独报告。'
-$retained=@(Get-ChildItem -LiteralPath $recoveryRoot -Directory)
+$retained=@(Get-ChildItem -LiteralPath $recoveryRoot -Directory | Where-Object {$_.Name -notin $existingRecoveryNames})
 Assert ($retained.Count -eq 1) '恢复失败后没有保留唯一的恢复副本。'
 $retainedPath=[IO.Path]::GetFullPath($retained[0].FullName)
 $recoveryBoundary=[IO.Path]::GetFullPath($recoveryRoot)+[IO.Path]::DirectorySeparatorChar
@@ -96,7 +113,10 @@ $journal=Get-Content (Join-Path $retainedPath 'journal.ini') -Raw
 Assert ($journal.Contains('source='+$original)) '待清理的恢复副本不属于本轮验证。'
 Remove-Item -LiteralPath $retainedPath -Recurse -Force
 Remove-Item -LiteralPath ('HKCU:/Software/ShenView/InstallerTransactions/'+$retained[0].Name) -Recurse -Force
-foreach($path in @($recoveryRoot,(Split-Path $recoveryRoot))){if(Test-Path -LiteralPath $path){[IO.Directory]::Delete($path,$false)}}
+foreach($path in @($recoveryRoot,(Split-Path $recoveryRoot))){
+  if((Test-Path -LiteralPath $path) -and @(Get-ChildItem -LiteralPath $path -Force).Count -eq 0){[IO.Directory]::Delete($path,$false)}
+}
+Assert-RecoveryUnchanged
 Assert ((Run-Operation $engine $moved 'migration-needs-confirmation') -ne 0) '未确认迁移也更换了目录。'
 Assert-Original
 foreach($stage in @('data','cleanup')) {
@@ -251,7 +271,16 @@ try {
   Assert ((Run-Operation $worker $purgeRoot 'complete-uninstall-reparse-blocked' @('/PURGE=1')) -ne 0) '完全卸载错误地跟随了目录链接。'
   Assert ((Get-Content (Join-Path $outside 'keep.txt') -Raw) -eq 'external-content') '完全卸载影响了链接外部的文件。'
   Assert-PurgeRestored
-} finally {Remove-Item -LiteralPath $junction -Force}
+} finally {
+  $junctionPath=[IO.Path]::GetFullPath($junction)
+  Assert ($junctionPath.StartsWith([IO.Path]::GetFullPath($work)+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) '待移除的目录链接超出本轮验证目录。'
+  if(Test-Path -LiteralPath $junctionPath) {
+    Assert (([IO.File]::GetAttributes($junctionPath) -band [IO.FileAttributes]::ReparsePoint) -ne 0) '待移除的测试路径不再是目录链接。'
+    # Windows PowerShell 5.1 Remove-Item can throw on junctions; remove only the link.
+    [IO.Directory]::Delete($junctionPath)
+  }
+}
+Assert ((Get-Content (Join-Path $outside 'keep.txt') -Raw) -eq 'external-content') '移除测试链接影响了目标目录。'
 $lockedPurge=[IO.File]::Open((Join-Path $purgeUser 'cache/data.bin'),[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
 try { Assert ((Run-Operation $worker $purgeRoot 'complete-uninstall-delete-blocked' @('/PURGE=1')) -ne 0) '用户数据被占用时仍报告卸载成功。' }
 finally {$lockedPurge.Dispose()}
@@ -263,6 +292,6 @@ Assert (-not(Test-Path (Join-Path $purgeUser 'cache'))) '完全卸载后缓存�
 Assert ((Get-Content (Join-Path $purgeUser 'MSIX/keep.txt') -Raw) -eq 'other-distribution') '完全卸载影响了其他渠道的数据。'
 foreach($path in @($key,$desktop,$start,$renamed)) { Assert (-not(Test-Path $path)) ('完全卸载后残留: '+$path) }
 Assert (@(Get-ChildItem -LiteralPath $work -Directory -Recurse -Filter '*.recovery-*').Count -eq 0) '安装目录旁仍产生恢复副本。'
-Assert (-not(Test-Path $recoveryRoot)) '操作结束后未清理临时事务目录。'
+Assert-RecoveryUnchanged
 @{passed=$true;testRoot=$work;rootEntries=$rootEntries;recovery=$recoveryEvidence;results=$results} | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $BuildDirectory 'transaction-results.json') -Encoding utf8
 Write-Output ('PASS: '+$work)

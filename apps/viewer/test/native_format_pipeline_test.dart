@@ -25,7 +25,10 @@ void main() {
     final icc = File('${formats.path}/format_srgb_icc.png');
     expect(icc.existsSync(), isTrue);
     expect(_contains(icc.readAsBytesSync(), 'iCCP'.codeUnits), isTrue);
-    expect((await MetadataService().read(icc.path)).colorSpace, contains('ICC'));
+    expect(
+      (await MetadataService().read(icc.path)).colorSpace,
+      contains('ICC'),
+    );
   });
 
   test(
@@ -122,10 +125,8 @@ void main() {
 
   test('ImageMagick fallback decodes RAW/HDR/EXR and ICC fixtures', () async {
     final bundled = File(
-      Directory('build/windows/x64/runner/Release/codecs/magick.exe')
-          .absolute
-          .path,
-    );
+      'build/windows/x64/runner/Release/codecs/imagemagick/magick.exe',
+    ).absolute;
     final configured = Platform.environment['SHENVIEW_MAGICK'];
     final executable = configured != null && File(configured).existsSync()
         ? configured
