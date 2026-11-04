@@ -9,12 +9,16 @@
 #pragma comment(lib, "comctl32.lib")
 
 #include "flutter/generated_plugin_registrant.h"
+extern "C" __declspec(dllimport) void ShenViewShutdownWebView();
 
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
 
-FlutterWindow::~FlutterWindow() {}
+FlutterWindow::~FlutterWindow() {
+  // WM_QUIT can end the loop without a preceding WM_DESTROY.
+  Destroy();
+}
 
 bool FlutterWindow::OnCreate() {
   if (!Win32Window::OnCreate()) {
@@ -169,6 +173,10 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  if (!flutter_controller_ || resources_destroyed_) return;
+  resources_destroyed_ = true;
+  // The dispatcher must drain before engine teardown, while callbacks are valid.
+  ShenViewShutdownWebView();
   native_external_open_.reset();
   native_media_audio_.reset();
   text_input_.reset();
@@ -187,9 +195,7 @@ void FlutterWindow::OnDestroy() {
   native_image_decoder_.reset();
   native_explorer_reveal_.reset();
   native_file_associations_.reset();
-  if (flutter_controller_) {
-    flutter_controller_ = nullptr;
-  }
+  flutter_controller_.reset();
 
   Win32Window::OnDestroy();
 }
@@ -272,6 +278,9 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  if (resources_destroyed_) {
+    return Win32Window::MessageHandler(hwnd, message, wparam, lparam);
+  }
   if (native_external_open_ && native_external_open_->HandleMessage(message)) {
     return 0;
   }

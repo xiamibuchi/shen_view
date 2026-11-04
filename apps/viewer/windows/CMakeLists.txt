@@ -79,6 +79,8 @@ if(TARGET flutter_inappwebview_windows_plugin)
   # Use standard WinRT coroutines instead of removed MSVC experimental ones.
   target_compile_features(flutter_inappwebview_windows_plugin PRIVATE cxx_std_20)
   target_compile_options(flutter_inappwebview_windows_plugin PRIVATE /permissive)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/../../../native/svg_codec/webview_windows_lifetime.cmake")
+  shenview_fix_webview_lifetime(flutter_inappwebview_windows_plugin)
 endif()
 
 

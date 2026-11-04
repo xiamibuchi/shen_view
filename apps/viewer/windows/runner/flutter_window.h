@@ -39,6 +39,7 @@ class FlutterWindow : public Win32Window {
       WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR data);
   bool text_input_enabled_ = false;
   bool updating_ime_ = false;
+  bool resources_destroyed_ = false;
   HIMC window_ime_context_ = nullptr;
   HIMC view_ime_context_ = nullptr;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> text_input_;
