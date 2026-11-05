@@ -37,6 +37,9 @@ README.md、docs/ 下普通 Markdown 说明跳过 Windows；混合改动、空�
 - Windows/macOS/Linux 验证提交检查工具及 PR 新增的普通提交。
 - Windows 构建先下载 LFS 样本，使用锁定 Flutter，生成本地化与许可排除表并检查漂移。
 - 检查本 PR 修改的 Dart 文件格式；custom_lint、analyze、Flutter 测试仍覆盖整个工程。
+- Quick checks 在 Ubuntu 执行格式、生成文件、custom_lint 和 analyze，与 Windows 构建并行。
+  Windows 继续运行全部 Flutter 测试和原生、便携包验证；任一任务失败都会拦截 PR checks。
+  发布工作流不传 static-checked，因此合并提交仍在 Windows 重新运行完整检查。
 - 构建 Release 与随包解码器，明确指定测试用 ImageMagick，避免关键用例因缺依赖跳过。
 - 完整测试前单独解码 Dolby Vision 样本；原生失败日志保留 Vulkan 与解码阶段错误。
 - 执行原生队列测试，生成 unsigned Windows x64 portable ZIP，解压后检查版本、哈希、
@@ -78,6 +81,9 @@ powershell -ExecutionPolicy Bypass -File tool/release/package_windows_portable.p
 不需要安装器编译器、MSIX 工具或证书。首次执行仍需要开发入门列出的构建工具。
 输出位于 artifacts/releases/<Windows四段版本>/windows-x64/portable-ci/。
 支持 -PayloadDirectory 复用已验证的干净载荷；此时不能声称重新构建了应用。
+
+windows.ps1 默认执行完整流程，也可用 -Phase Prepare/Build/Test/Package 分段复验。
+Test 默认包含完整静态检查和测试；-StaticChecked 仅用于已有独立静态检查门禁的 PR 工作流。
 
 ## Release 草稿
 

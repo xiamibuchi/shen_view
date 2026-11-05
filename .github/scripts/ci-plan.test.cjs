@@ -14,7 +14,7 @@ test('only ordinary Markdown documentation can skip Windows', () => {
 
 const needs = (required, result) => ({
   plan: { result: 'success', outputs: { windows_required: required } },
-  commits: { result: 'success' }, windows: { result },
+  commits: { result: 'success' }, quick: { result }, windows: { result },
 });
 test('gate accepts only successful code checks or an explicit docs skip', () => {
   validateGate(needs('true', 'success'));
@@ -23,6 +23,7 @@ test('gate accepts only successful code checks or an explicit docs skip', () => 
     assert.throws(() => validateGate(needs('true', result)));
   }
   assert.throws(() => validateGate(needs(undefined, 'skipped')));
+  assert.throws(() => validateGate({ ...needs('true', 'success'), quick: { result: 'failure' } }));
   assert.throws(() => validateGate({ ...needs('false', 'skipped'), commits: { result: 'failure' } }));
   assert.throws(() => validateGate({ ...needs('false', 'skipped'), plan: { result: 'cancelled' } }));
 });

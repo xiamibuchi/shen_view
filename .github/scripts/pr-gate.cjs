@@ -5,7 +5,9 @@ function validateGate(needs) {
   const required = needs.plan.outputs?.windows_required;
   if (!['true', 'false'].includes(required)) throw new Error('Missing CI plan');
   const expected = required === 'true' ? 'success' : 'skipped';
-  if (needs.windows?.result !== expected) throw new Error(`Windows result must be ${expected}`);
+  for (const name of ['quick', 'windows']) {
+    if (needs[name]?.result !== expected) throw new Error(`${name} result must be ${expected}`);
+  }
 }
 
 if (require.main === module) validateGate(JSON.parse(process.env.CI_NEEDS));
