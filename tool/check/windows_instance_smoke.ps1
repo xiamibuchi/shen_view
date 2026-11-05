@@ -1,5 +1,6 @@
 ﻿param([string]$ReleaseDirectory = 'build/windows/x64/runner/Release')
 . (Join-Path $PSScriptRoot '../paths.ps1')
+. (Join-Path $PSScriptRoot 'windows_instance_helpers.ps1')
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 Add-Type @'
@@ -62,12 +63,6 @@ function Save-Window([Diagnostics.Process]$Process, [string]$Name) {
   try { [void][InstanceSmokeWindow]::PrintWindow($Process.MainWindowHandle, $dc, 2) } finally { $graphics.ReleaseHdc($dc) }
   try { $bitmap.Save((Join-Path $runRoot $Name), [Drawing.Imaging.ImageFormat]::Png) } finally { $graphics.Dispose(); $bitmap.Dispose() }
 }
-function Set-Mode([string]$Mode) {
-  # Edit only this isolated fixture while its viewer is idle.
-  $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
-  $config.settings | Add-Member -NotePropertyName instanceMode -NotePropertyValue $Mode -Force
-  [IO.File]::WriteAllText($configPath, ($config | ConvertTo-Json -Depth 30))
-}
 try {
   [IO.File]::WriteAllText($configPath, '{"settings":{"localeCode":"zh","instanceMode":"singleProcess","openRecentOnNewWindow":true,"watchFolderChanges":false}}')
   $imagePath = Join-Path $runRoot '中文 image.png'
@@ -98,16 +93,22 @@ try {
     } finally { $capture.Dispose() }
   } '转发后主图像素未就绪'
   Assert-True $true '转发后主图像素与测试图片一致'
-  Set-Mode 'multiProcess'
+  Set-ShenViewSmokeInstanceMode -ConfigPath $configPath -Mode 'multiProcess'
   $fourth = Launch-Viewer $imagePath
   Wait-Viewer $fourth
   Assert-True ($first.Id -ne $fourth.Id -and -not $first.HasExited) '多进程启动创建独立窗口'
   [void][InstanceSmokeWindow]::PostMessage($first.MainWindowHandle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
   Assert-True ($first.WaitForExit(20000) -and $first.ExitCode -eq 0) '关闭第一个窗口正常退出'
   Assert-True (-not $fourth.HasExited) '关闭一个实例不影响另一个实例'
-  Set-Mode 'singleProcess'
+  Set-ShenViewSmokeInstanceMode -ConfigPath $configPath -Mode 'singleProcess'
+  $modeBeforeForward = ([IO.File]::ReadAllText($configPath) | ConvertFrom-Json).settings.instanceMode
   $fifth = Launch-Viewer
-  Assert-True ($fifth.WaitForExit(20000) -and $fifth.ExitCode -eq 0) '切回单进程后复用存活窗口'
+  $forwarded = $fifth.WaitForExit(20000)
+  $forwardExit = $fifth.ExitCode
+  $modeAfterForward = ([IO.File]::ReadAllText($configPath) | ConvertFrom-Json).settings.instanceMode
+  @{completed=$forwarded;exitCode=$forwardExit;modeBefore=$modeBeforeForward;modeAfter=$modeAfterForward;pid=$fifth.Id} |
+    ConvertTo-Json | Set-Content -LiteralPath (Join-Path $runRoot 'instance-forward.json') -Encoding UTF8
+  Assert-True ($forwarded -and $forwardExit -eq 0) ('切回单进程后复用存活窗口，完成：' + $forwarded + '，退出码：' + $forwardExit + '，模式：' + $modeAfterForward)
   Save-Window $fourth 'surviving-window.png'
   $fourth.Kill(); $fourth.WaitForExit()
   $sixth = Launch-Viewer
