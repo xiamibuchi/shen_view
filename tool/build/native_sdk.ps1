@@ -16,7 +16,8 @@ function Get-NativeSdkRecipeKey {
   $records = @("native-sdk-recipe-v1:windows-x64:Release:MD")
   foreach ($name in $recipe.hdrSources) {
     $source = $dependencies.sources.$name
-    $records += "$name`n$($source.url)`n$($source.sha256)`n$($source.sourceSubdir)"
+    $sourceSubdir = if ($source.PSObject.Properties["sourceSubdir"]) { $source.sourceSubdir } else { "" }
+    $records += "$name`n$($source.url)`n$($source.sha256)`n$sourceSubdir"
   }
   foreach ($inputPath in $recipe.inputs) {
     $absolute = Join-Path $RepositoryRoot $inputPath

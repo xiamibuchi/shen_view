@@ -16,7 +16,7 @@ permissions:
 jobs:
   native:
     name: Dependency SDK (${{ matrix.component }})
-    runs-on: windows-2025
+    runs-on: windows-2022
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -56,7 +56,13 @@ jobs:
           . ./tool/ci/timing.ps1
           $CiTimingPath = Join-Path $log 'native-timings.jsonl'
           Measure-CiStage "Source SDK $env:NATIVE_COMPONENT" {
-            & ./tool/ci/native-cache.ps1 -Action Build -Component $env:NATIVE_COMPONENT *>&1 | Tee-Object -FilePath (Join-Path $log 'source-build.log')
+            if ($env:NATIVE_COMPONENT -eq 'hdr') {
+              $recipe = Get-Content third_party/native-sdk/recipe.json -Raw | ConvertFrom-Json
+              if (-not $recipe.hdrGenerator) { throw 'SDK production generator must be pinned' }
+              & ./tool/build/build_hdr_codecs.ps1 -Generator $recipe.hdrGenerator *>&1 | Tee-Object -FilePath (Join-Path $log 'source-build.log')
+            } else {
+              & ./tool/ci/native-cache.ps1 -Action Build -Component Ffmpeg *>&1 | Tee-Object -FilePath (Join-Path $log 'source-build.log')
+            }
             & ./tool/build/package_native_sdk.ps1 -Component $env:NATIVE_COMPONENT
           }
           $lock = Get-Content third_party/native-sdk.lock.json -Raw | ConvertFrom-Json

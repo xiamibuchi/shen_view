@@ -6,6 +6,8 @@ $savedRepository = $RepositoryRoot
 $savedBuild = $NativeBuildRoot
 $savedMode = $env:SHENVIEW_NATIVE_BUILD_MODE
 $savedSdk = $env:SHENVIEW_NATIVE_SDK_ROOT
+$savedHdr = $env:SHENVIEW_HDR_SDK
+$savedFfmpeg = $env:SHENVIEW_FFMPEG_SDK
 function Assert([bool]$Condition, [string]$Message) { if (-not $Condition) { throw "SDK assertion failed: $Message" } }
 function Reject([scriptblock]$Action) {
   $failed = $false
@@ -25,6 +27,10 @@ try {
   $recipePath = Join-Path $RepositoryRoot "recipe.txt"
   [IO.File]::WriteAllText($recipePath,"build`r`nRelease`r`n")
   $recipe = Get-NativeSdkRecipeKey
+  & {
+    Set-StrictMode -Version Latest
+    Assert ($recipe -ceq (Get-NativeSdkRecipeKey)) "optional sourceSubdir must work under packaging strict mode"
+  }
   [IO.File]::WriteAllText($recipePath,"build`nRelease`n")
   Assert ($recipe -ceq (Get-NativeSdkRecipeKey)) "recipe differs across checkout line endings"
   [IO.File]::WriteAllText($recipePath,"changed`n")
@@ -99,6 +105,8 @@ try {
   $NativeBuildRoot = $savedBuild
   $env:SHENVIEW_NATIVE_BUILD_MODE = $savedMode
   $env:SHENVIEW_NATIVE_SDK_ROOT = $savedSdk
+  $env:SHENVIEW_HDR_SDK = $savedHdr
+  $env:SHENVIEW_FFMPEG_SDK = $savedFfmpeg
   $absolute = [IO.Path]::GetFullPath($testRoot)
   $temp = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd("/","\") + [IO.Path]::DirectorySeparatorChar
   if (-not $absolute.StartsWith($temp,[StringComparison]::OrdinalIgnoreCase) -or (Split-Path $absolute -Leaf) -notlike "shenview-sdk-test-*") { throw "Invalid SDK test cleanup path" }

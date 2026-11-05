@@ -30,7 +30,7 @@ helper 改动直接进入 CMake 构建，不主动重新配置。CMake 自行维
 缺少本地构建状态或 CMake 配置、依赖身份变化、产物缺失或损坏时，脚本清理自己的
 `build/hdr-codecs` 后重新构建。`build-state.json` 仅用于本地构建树，不随缓存或 artifact 传递。
 
-## CI
+## SDK 引入前的 CI
 
 `native-build.yml` 的 HDR / FFmpeg 两个矩阵 job 使用独立 runner。产物校验成功后保存缓存，
 并上传当前运行的 helper / SDK artifact。Windows 应用 job 下载并再次校验这些文件后，
@@ -58,3 +58,14 @@ helper 改动直接进入 CMake 构建，不主动重新配置。CMake 自行维
 22.0 MiB；对应源码另行分发，不计入普通 PR 下载量。上述数据不包含从 GitHub 下载
 SDK，也不包含 Flutter 构建、测试、runner 初始化及打包时间。云端收益需按已发布 SDK
 的普通 PR 实测，不能由本机数据直接换算。维护与更新步骤见[原生 SDK](native-sdk.md)。
+
+PR #18 在 GitHub `windows-2025` runner 上的两组脚本计时：
+
+| 组件 | 从源码构建并打包 SDK | 使用 SDK 重新编译及链接 helper |
+| --- | ---: | ---: |
+| HDR | 171.07 秒 | 9.73 秒 |
+| FFmpeg | 433.63 秒 | 1.99 秒 |
+
+源码列包含库构建、源码附件及开发 SDK 打包；重新链接列使用该 SDK，编译当前 helper。
+两组件在不同 runner 并行，不能把耗时相加后当作流水线节省量。数据来自
+[PR #18](https://github.com/xiamibuchi/shen_view/actions/runs/42008343167) 的诊断附件。
