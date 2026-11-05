@@ -50,6 +50,7 @@
 ## 发布资料
 
 - [分发范围与待完成事项](release/distribution.md)
+- [Windows 预览版验收](release/windows-preview-acceptance.md)
 - [压缩包分发许可](release/archive-licensing.md)
 - [开源许可维护](release/open-source-licenses.md)
 - 应用商店文案：[简体中文](release/store-listing.zh-CN.md) / [English](release/store-listing.en-US.md)

@@ -188,7 +188,7 @@ void main() {
     'real RGBE/EXR float decoding retains the >1 highlight ladder',
     () async {
       final bundled = File(
-        'build/windows/x64/runner/Release/codecs/magick.exe',
+        'build/windows/x64/runner/Release/codecs/imagemagick/magick.exe',
       );
       final configured = Platform.environment['SHENVIEW_MAGICK'];
       final executable =

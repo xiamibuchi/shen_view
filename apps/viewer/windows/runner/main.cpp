@@ -5,6 +5,20 @@
 #include "flutter_window.h"
 #include "utils.h"
 
+namespace {
+class ComApartment {
+ public:
+  ComApartment() : status_(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)) {}
+  ~ComApartment() {
+    if (SUCCEEDED(status_)) ::CoUninitialize();
+  }
+  HRESULT status() const { return status_; }
+
+ private:
+  HRESULT status_;
+};
+}  // namespace
+
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
   // Attach to console when present (e.g., 'flutter run') or create a
@@ -13,12 +27,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     CreateAndAttachConsole();
   }
 
-  // Initialize COM, so that it is available for use in the library and/or
-  // plugins.
-  ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+  // The window, engine and plugins must be destroyed before COM is released.
+  ComApartment apartment;
+  if (FAILED(apartment.status())) return EXIT_FAILURE;
   const auto association_command = NativeFileAssociations::HandleCommand(GetCommandLineArguments());
   if (association_command.has_value()) {
-    ::CoUninitialize();
     return *association_command;
   }
 
@@ -38,12 +51,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   }
   window.SetQuitOnClose(true);
 
-  ::MSG msg;
-  while (::GetMessage(&msg, nullptr, 0, 0)) {
+  ::MSG msg{};
+  BOOL message_result;
+  while ((message_result = ::GetMessage(&msg, nullptr, 0, 0)) > 0) {
     ::TranslateMessage(&msg);
     ::DispatchMessage(&msg);
   }
 
-  ::CoUninitialize();
-  return EXIT_SUCCESS;
+  return message_result == -1 ? EXIT_FAILURE : static_cast<int>(msg.wParam);
 }

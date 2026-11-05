@@ -20,11 +20,15 @@ $release = [IO.Path]::GetFullPath((Join-Path $project $ReleaseDirectory))
 $runRoot = Join-Path $project ('build/instance-smoke-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $runRoot | Out-Null
 # Use a private portable copy; never alter the user's running viewer/config.
-Get-ChildItem -LiteralPath $release | Where-Object { $_.Name -notlike 'settings.json*' } | ForEach-Object {
+Get-ChildItem -LiteralPath $release | Where-Object { $_.Name -notlike 'settings.json*' -and $_.Name -notin @('user-data', 'installation-mode') } | ForEach-Object {
   Copy-Item -LiteralPath $_.FullName -Destination $runRoot -Recurse
 }
 $executable = Join-Path $runRoot 'ShenView.exe'
-$configPath = Join-Path $runRoot 'settings.json'
+# Force the private fixture to keep settings and instance state beside its copy.
+[IO.File]::WriteAllText((Join-Path $runRoot 'installation-mode'), 'portable')
+$dataRoot = Join-Path $runRoot 'user-data'
+New-Item -ItemType Directory -Path $dataRoot -Force | Out-Null
+$configPath = Join-Path $dataRoot 'settings.json'
 $tracked = [Collections.Generic.List[Diagnostics.Process]]::new()
 $results = [Collections.Generic.List[string]]::new()
 function Assert-True($Value, [string]$Message) {
@@ -60,7 +64,7 @@ function Save-Window([Diagnostics.Process]$Process, [string]$Name) {
 }
 function Set-Mode([string]$Mode) {
   # Edit only this isolated fixture while its viewer is idle.
-  $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+  $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
   $config.settings | Add-Member -NotePropertyName instanceMode -NotePropertyValue $Mode -Force
   [IO.File]::WriteAllText($configPath, ($config | ConvertTo-Json -Depth 30))
 }
@@ -75,8 +79,10 @@ try {
   $first = Launch-Viewer
   Wait-Viewer $first
   $second = Launch-Viewer $imagePath
-  Assert-True ($second.WaitForExit(20000) -and $second.ExitCode -eq 0) '单进程重复启动完成转发并退出'
-  Wait-Until { ((Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json).session.recentFile) -eq $imagePath } '文件请求未交给已有窗口'
+  $forwarded = $second.WaitForExit(20000)
+  $forwardExit = if ($forwarded) { $second.ExitCode } else { 'still running' }
+  Assert-True ($forwarded -and $second.ExitCode -eq 0) ('单进程重复启动完成转发并退出，实际退出码：' + $forwardExit)
+  Wait-Until { ((Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json).session.recentFile) -eq $imagePath } '文件请求未交给已有窗口'
   Assert-True (-not $first.HasExited) '已有窗口接收中文空格路径后保持运行'
   [void][InstanceSmokeWindow]::ShowWindow($first.MainWindowHandle, 6)
   $third = Launch-Viewer
@@ -97,7 +103,7 @@ try {
   Wait-Viewer $fourth
   Assert-True ($first.Id -ne $fourth.Id -and -not $first.HasExited) '多进程启动创建独立窗口'
   [void][InstanceSmokeWindow]::PostMessage($first.MainWindowHandle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
-  Assert-True ($first.WaitForExit(20000)) '关闭第一个窗口正常退出'
+  Assert-True ($first.WaitForExit(20000) -and $first.ExitCode -eq 0) '关闭第一个窗口正常退出'
   Assert-True (-not $fourth.HasExited) '关闭一个实例不影响另一个实例'
   Set-Mode 'singleProcess'
   $fifth = Launch-Viewer
@@ -108,6 +114,33 @@ try {
   Wait-Viewer $sixth
   Assert-True (-not $sixth.HasExited) '实例强退后可以重新启动'
   Save-Window $sixth 'recovered-window.png'
+  [void][InstanceSmokeWindow]::PostMessage($sixth.MainWindowHandle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+  Assert-True ($sixth.WaitForExit(20000) -and $sixth.ExitCode -eq 0) '强退重启后的窗口正常退出'
+  $svgPath = Join-Path $runRoot '中文 browser.svg'
+  Copy-Item -LiteralPath (Join-Path $project 'testdata/svg/css_variables.svg') -Destination $svgPath
+  $browser = Launch-Viewer $svgPath
+  Wait-Viewer $browser
+  Wait-Until {
+    Save-Window $browser 'browser-process.png'
+    $capture = [Drawing.Bitmap]::new((Join-Path $runRoot 'browser-process.png'))
+    try {
+      $red = 0; $blue = 0
+      for ($y = 0; $y -lt $capture.Height; $y += 4) {
+        for ($x = 0; $x -lt $capture.Width; $x += 4) {
+          $pixel = $capture.GetPixel($x, $y)
+          if ($pixel.R -eq 192 -and $pixel.G -eq 0 -and $pixel.B -eq 0) { $red++ }
+          if ($pixel.R -eq 0 -and $pixel.G -eq 68 -and $pixel.B -eq 255) { $blue++ }
+        }
+      }
+      # The static fallback cannot resolve these scoped CSS variables.
+      return ($red -gt 20 -and $blue -gt 20)
+    } finally { $capture.Dispose() }
+  } '复杂 SVG 的 WebView 像素未就绪'
+  Assert-True $true '复杂 SVG 显示真实 WebView 像素'
+  $browserForward = Launch-Viewer $svgPath
+  Assert-True ($browserForward.WaitForExit(20000) -and $browserForward.ExitCode -eq 0 -and -not $browser.HasExited) '复杂 SVG 窗口接收重复打开请求，转发进程正常退出'
+  [void][InstanceSmokeWindow]::PostMessage($browser.MainWindowHandle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+  Assert-True ($browser.WaitForExit(20000) -and $browser.ExitCode -eq 0) '复杂 SVG 窗口正常退出'
   $results | ForEach-Object { Write-Output ('PASS: ' + $_) }
   Write-Output ('Artifacts: ' + $runRoot)
 } finally {

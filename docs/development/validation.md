@@ -52,6 +52,18 @@ $svgOutput = Join-Path (Get-Location).Path '../../artifacts/svg-routing/native'
 flutter test integration_test/svg_browser_test.dart -d windows --dart-define=SVG_FIXTURES=$svgFixtures --dart-define=SVG_ARTIFACTS=$svgOutput
 ~~~
 
+Windows 的 flutter_inappwebview_windows 0.6.0 将线程 dispatcher 和合成器保留到 DLL 卸载。
+[构建补丁](../../native/svg_codec/webview_windows_lifetime.cmake)生成私有源码，
+由 runner 在销毁引擎前释放 WebView 并排空 dispatcher，避免转发后退出或关窗时访问已释放资源。
+它不修改 Pub 缓存；升级插件时必须核对补丁锚点及生命周期，并复跑 SVG 集成测试和
+tool/check/windows_instance_smoke.ps1 的启动、转发、正常退出及强退重启检查。
+上游覆盖相同清理流程后移除补丁及 runner 的调用。
+
+Windows ImageMagick 的动态 coder 依赖随包目录中的 DLL，解码子进程必须将自身目录
+放在 PATH 首位。tool/check/windows_codec_layout.ps1 用随包目录和 System32 检查
+实际 PNG 导出；发行验收另在未安装 ImageMagick 和开发工具的干净虚拟机运行，
+避免系统安装的库和注册表配置掩盖问题。版本信息或图片尺寸读取成功不能代替像素验证。
+
 RAW 100% 专项另需 RAW_TRACE_HELPER 和 RAW_TRACE_LOG，代理逐字节转发实际 LibRaw 输出并记录调用，
 缺少追踪 helper 的测试会跳过。测试视图模拟四档 DPI，不能写成四种物理屏幕验收。
 RAW 的曝光与原尺寸断言以测试为准。
