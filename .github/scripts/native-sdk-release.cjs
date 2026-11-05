@@ -2,6 +2,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
+function readLock(filename = 'third_party/native-sdk.lock.json') {
+  // Windows PowerShell 5.1 Set-Content -Encoding utf8 writes a BOM.
+  return JSON.parse(fs.readFileSync(filename, 'utf8').replace(/^\uFEFF/, ''));
+}
+
 function readAssets(directory, lock) {
   return ['hdr', 'ffmpeg'].flatMap(component => ['sdk', 'sources'].flatMap(kind => {
     const name = kind === 'sdk' ? lock.components[component].asset : `shenview-${component}-sources-windows-x64.zip`;
@@ -16,7 +21,7 @@ function readAssets(directory, lock) {
 }
 
 async function publish({ github, context, core, directory = 'sdk-assets' }) {
-  const lock = JSON.parse(fs.readFileSync('third_party/native-sdk.lock.json', 'utf8'));
+  const lock = readLock();
   if (!/^\d+\.\d+\.\d+$/.test(lock.version) || !/^[a-f0-9]{64}$/.test(lock.recipeSha256)) throw new Error('Invalid SDK version or recipe');
   const assets = readAssets(directory, lock);
   const tag = `native-sdk-v${lock.version}`;
@@ -44,4 +49,4 @@ async function publish({ github, context, core, directory = 'sdk-assets' }) {
   core.notice(`Published dependency SDK: ${release.html_url}`);
 }
 
-module.exports = { readAssets, publish };
+module.exports = { readLock, readAssets, publish };

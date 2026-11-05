@@ -4,7 +4,15 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { readAssets, publish } = require('./native-sdk-release.cjs');
+const { readLock, readAssets, publish } = require('./native-sdk-release.cjs');
+
+test('SDK lock accepts Windows PowerShell UTF-8 BOM', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'shenview-sdk-lock-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const filename = path.join(directory, 'lock.json');
+  fs.writeFileSync(filename, '\ufeff{"version":"1.0.0"}');
+  assert.deepEqual(readLock(filename), { version: '1.0.0' });
+});
 
 test('SDK publication validates assets and never replaces an existing version', async t => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'shenview-sdk-release-'));
@@ -45,7 +53,7 @@ test('SDK publication validates assets and never replaces an existing version', 
   github.rest.repos.getReleaseByTag = async () => ({ data: { id: 42, draft: true, target_commitish: 'other', body: '' } });
   await assert.rejects(publish({ github, context, core: { notice() {} }, directory }), /another commit/);
   assert.equal(calls.length, 0);
-  const recipeSha = JSON.parse(fs.readFileSync('third_party/native-sdk.lock.json', 'utf8')).recipeSha256;
+  const recipeSha = readLock().recipeSha256;
   github.rest.repos.getReleaseByTag = async () => ({ data: { id: 42, draft: true, target_commitish: context.sha, body: `Recipe SHA256: ${recipeSha}` } });
   github.paginate = async () => [{ id: 123 }];
   await publish({ github, context, core: { notice() {} }, directory });

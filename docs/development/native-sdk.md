@@ -13,6 +13,8 @@ Windows x64 使用 `third_party/native-sdk.lock.json` 固定第三方开发 SDK�
 MSVC 必须不低于 HDR SDK 记录的编译器版本，使用动态 CRT、x64、Release。FFmpeg worker
 仍需要兼容的 x64 MinGW GCC；库通过 DLL 导入库链接，不把生产端编译器的文件哈希作为
 消费端的版本约束。每个 helper 的本地构建身份仍追踪本机工具链。
+生产端固定使用 VS2022，避免托管 runner 的最新编译器补丁提高消费端最低要求；
+重新链接验收与应用构建使用当前默认工具链，验证较新工具链能消费该 SDK。
 
 需要调试第三方库、使用较旧工具链或构建尚未发布的 SDK 时，可明确选择源码模式：
 
@@ -64,9 +66,13 @@ sources 附件发布。libplacebo 的 MSYS2 对应源码包包含原始源码、
 源码构建后生成候选包：
 
 ```powershell
+ $generator = (Get-Content third_party/native-sdk/recipe.json -Raw | ConvertFrom-Json).hdrGenerator
+./tool/build/build_hdr_codecs.ps1 -DependencyMode Source -Generator $generator
+./tool/build/build_ffmpeg.ps1 -DependencyMode Source
 ./tool/build/package_native_sdk.ps1 -Component hdr
 ./tool/build/package_native_sdk.ps1 -Component ffmpeg
-./tool/ci/native-sdk.ps1 -CandidateDirectory artifacts/native-sdk/1.0.0
+$version = (Get-Content third_party/native-sdk.lock.json -Raw | ConvertFrom-Json).version
+./tool/ci/native-sdk.ps1 -CandidateDirectory "artifacts/native-sdk/$version"
 ```
 
 候选包默认位于 `artifacts/native-sdk/<version>/`。`SHENVIEW_NATIVE_SDK_ROOT` 可指定

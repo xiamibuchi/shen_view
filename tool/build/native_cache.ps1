@@ -65,7 +65,12 @@ function Test-NativeIncrementalBuild([string]$Root, [string]$BuildKey, [string[]
 }
 
 function Get-HdrDependencyKey([string]$CMake, [string]$Generator, [string]$Architecture) {
-  $installation = & (Resolve-ShenViewVsWhere) -latest -products '*' -property installationPath
+  $vsArguments = @('-latest','-products','*','-requires','Microsoft.VisualStudio.Component.VC.Tools.x86.x64')
+  if ($Generator -match '^Visual Studio (17|18) ') {
+    $major = [int]$Matches[1]
+    $vsArguments += @('-version',"[$major.0,$($major + 1).0)")
+  }
+  $installation = & (Resolve-ShenViewVsWhere) @vsArguments -property installationPath
   if ($LASTEXITCODE -ne 0 -or -not $installation) { throw 'Visual Studio not found' }
   $compiler = Get-ChildItem -LiteralPath (Join-Path $installation 'VC/Tools/MSVC') -Directory |
     Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
