@@ -1,8 +1,6 @@
 name: Commit messages
 
 on:
-  push:
-    branches: ['**']
   workflow_dispatch:
 
 permissions:

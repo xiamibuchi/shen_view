@@ -1,4 +1,7 @@
 *.sh text eol=lf
+*.dart text eol=lf
+apps/viewer/macos/Flutter/GeneratedPluginRegistrant.swift text eol=lf
+apps/viewer/windows/flutter/generated_* text eol=lf
 .githooks/* text eol=lf
 .github/workflows/* text eol=lf
 third_party/ffmpeg/licenses/** text eol=lf

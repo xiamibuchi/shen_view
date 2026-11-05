@@ -5,12 +5,17 @@ param([string]$Flutter = 'flutter')
 $ErrorActionPreference = 'Stop'
 $Flutter = Resolve-ShenViewFlutterTool $Flutter
 $dart = Join-Path (Split-Path $Flutter) 'dart.bat'
+. (Join-Path $PSScriptRoot 'timing.ps1')
+$CiTimingPath = Join-Path $ArtifactRoot 'ci/windows-timings.jsonl'
+New-Item -ItemType Directory -Path (Split-Path $CiTimingPath) -Force | Out-Null
+[IO.File]::WriteAllText($CiTimingPath, '')
 function Run([string]$Program, [string[]]$Arguments) {
   & $Program @Arguments
   if ($LASTEXITCODE -ne 0) { throw "检查失败：$Program $Arguments ($LASTEXITCODE)" }
 }
 Push-Location $ViewerRoot
 try {
+  Measure-CiStage 'Dependencies and generated files' {
   Run $Flutter @('pub', 'get', '--enforce-lockfile')
   Run $Flutter @('gen-l10n')
   Run $dart @('run', 'tool/generate_license_exclusions.dart')
@@ -21,22 +26,33 @@ try {
   $files = @($changed | ForEach-Object { Join-Path $RepositoryRoot $_ } | Where-Object { Test-Path -LiteralPath $_ })
   if ($files.Count) { Run $dart (@('format', '--output=none', '--set-exit-if-changed') + $files) }
   Run git @('diff', '--exit-code', '--', 'lib/l10n', 'lib/src/application/license_exclusions.g.dart', 'pubspec.lock')
+  }
+  Measure-CiStage 'Windows Release build' {
   Run $Flutter @('build', 'windows', '--release', '--no-pub')
+  }
+  Measure-CiStage 'Native codecs and layout' {
   & (Join-Path $PSScriptRoot '../build/build_hdr_codecs.ps1')
   & (Join-Path $PSScriptRoot '../build/package_windows_codecs.ps1')
+  }
   # Tests must use the packaged decoder rather than silently skipping it on a clean runner.
   $env:SHENVIEW_MAGICK = Join-Path $ViewerRoot 'build/windows/x64/runner/Release/codecs/imagemagick/magick.exe'
   if (-not (Test-Path -LiteralPath $env:SHENVIEW_MAGICK)) { throw 'CI 缺少随包 ImageMagick。' }
-  Run node @((Join-Path $PSScriptRoot '../check/hdr_video_smoke.cjs'))
+  Measure-CiStage 'HDR video smoke' { Run node @((Join-Path $PSScriptRoot '../check/hdr_video_smoke.cjs')) }
+  Measure-CiStage 'Full Flutter checks' {
   & (Join-Path $PSScriptRoot '../check/check.ps1') -Flutter $Flutter
   if ($LASTEXITCODE -ne 0) { throw '完整检查失败。' }
+  }
+  Measure-CiStage 'Native queue tests' {
   Run cmake @('-S', (Join-Path $RepositoryRoot 'native/tests'), '-B', (Join-Path $NativeBuildRoot 'native-tests'), '-G', (Resolve-ShenViewVisualStudioGenerator), '-A', 'x64')
   Run cmake @('--build', (Join-Path $NativeBuildRoot 'native-tests'), '--config', 'Release', '--parallel', '2')
   Run ctest @('--test-dir', (Join-Path $NativeBuildRoot 'native-tests'), '-C', 'Release', '--output-on-failure')
+  }
+  Measure-CiStage 'Portable package and smoke' {
   & (Join-Path $PSScriptRoot '../release/package_windows_portable.ps1') -Flutter $Flutter -SkipBuild -SkipCodecs
   $version = [regex]::Match((Get-Content pubspec.yaml -Raw), '(?m)^version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$')
   if (-not $version.Success) { throw '无法读取发布版本。' }
   $output = Join-Path $ArtifactRoot ('releases/' + $version.Groups[1].Value + '.' + $version.Groups[2].Value + '/windows-x64/portable-ci')
   & (Join-Path $PSScriptRoot '../check/windows_portable_smoke.ps1') -ReleaseDirectory $output
+  }
   Run git @('diff', '--exit-code')
 } finally { Pop-Location }

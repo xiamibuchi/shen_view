@@ -28,8 +28,8 @@ LF 和 CRLF。`fixup!`、`squash!` 提交须整理后再提交。
 ### 自动检查
 
 本地 hook 与 GitHub Actions 共用 `tool/check/commit_message.sh`。Actions 在 Windows、
-macOS 和 Linux 上运行测试，并检查 push、PR 中新增的非合并提交，不追溯已有提交。
-新分支与默认分支比较；手动触发时检查 HEAD 相对第一父提交新增的提交。真正的 merge
+macOS 和 Linux 上运行测试，并检查 PR 中新增的非合并提交，不追溯已有提交。
+推送到 PR 后由 PR 工作流统一检查，避免 push 重复运行；手动触发时检查 HEAD 相对第一父提交新增的提交。真正的 merge
 commit 跳过首行格式检查，其包含的普通提交仍会在 Actions 中检查。
 
 ### 验证提交检查工具

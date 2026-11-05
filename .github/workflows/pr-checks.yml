@@ -3,7 +3,7 @@ name: Pull request checks
 on:
   pull_request:
     branches: [main, 'release/**']
-    types: [opened, synchronize, reopened, ready_for_review, edited]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
@@ -13,9 +13,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  policy:
-    name: PR policy
+  plan:
+    name: Plan checks
     runs-on: ubuntu-latest
+    outputs:
+      windows_required: ${{ steps.plan.outputs.windows_required }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -23,6 +25,8 @@ jobs:
           persist-credentials: false
       - run: node --test .github/scripts/*.test.cjs
       - run: node .github/scripts/pr-policy.cjs
+      - id: plan
+        run: node .github/scripts/ci-plan.cjs
   commits:
     name: Commit message format (${{ matrix.os }})
     strategy:
@@ -46,7 +50,8 @@ jobs:
           COMMIT_PR_HEAD: ${{ github.event.pull_request.head.sha }}
         run: sh tool/check/commit_message.sh --event
   windows:
-    needs: policy
+    needs: plan
+    if: needs.plan.outputs.windows_required == 'true'
     uses: ./.github/workflows/windows-build.yml
     with:
       ref: ${{ github.ref }}
@@ -55,11 +60,13 @@ jobs:
   gate:
     name: PR checks
     if: always()
-    needs: [policy, commits, windows]
+    needs: [plan, commits, windows]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Require all checks
         env:
-          RESULTS: ${{ toJSON(needs) }}
-        run: |
-          node -e "const jobs=JSON.parse(process.env.RESULTS); if(Object.values(jobs).some(j=>j.result!=='success')) process.exit(1);"
+          CI_NEEDS: ${{ toJSON(needs) }}
+        run: node .github/scripts/pr-gate.cjs
