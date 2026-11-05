@@ -48,7 +48,16 @@ function Test-NativeCacheManifest([string]$Root, [string]$Key, [string[]]$Direct
   } catch { return $false }
 }
 
-function Get-HdrCacheKey([string]$CMake, [string]$Generator, [string]$Architecture) {
+function Test-NativeIncrementalBuild([string]$Root, [string]$BuildKey, [string[]]$Directories, [string[]]$Required) {
+  try {
+    $state = Get-Content -LiteralPath (Join-Path $Root 'build-state.json') -Raw -ErrorAction Stop | ConvertFrom-Json
+    if ($state.schema -ne 1 -or $state.key -cne $BuildKey -or -not (Test-Path -LiteralPath (Join-Path $Root 'CMakeCache.txt'))) { return $false }
+    $manifest = Get-Content -LiteralPath (Join-Path $Root 'cache-manifest.json') -Raw -ErrorAction Stop | ConvertFrom-Json
+    return Test-NativeCacheManifest $Root $manifest.key $Directories $Required
+  } catch { return $false }
+}
+
+function Get-HdrDependencyKey([string]$CMake, [string]$Generator, [string]$Architecture) {
   $installation = & (Resolve-ShenViewVsWhere) -latest -products '*' -property installationPath
   if ($LASTEXITCODE -ne 0 -or -not $installation) { throw 'Visual Studio not found' }
   $compiler = Get-ChildItem -LiteralPath (Join-Path $installation 'VC/Tools/MSVC') -Directory |
@@ -60,8 +69,13 @@ function Get-HdrCacheKey([string]$CMake, [string]$Generator, [string]$Architectu
   $cmakeVersion = & $CMake --version
   if ($LASTEXITCODE) { throw 'Cannot identify CMake' }
   $toolchain = @($Architecture,$Generator,$cmakeVersion[0],(Get-FileHash $cl -Algorithm SHA256).Hash,$sdk.Name,$env:ImageVersion) -join ':'
-  Get-NativeInputKey $RepositoryRoot @('native/hdr_codecs','third_party/cmake','third_party/dependencies.lock.json',
+  Get-NativeInputKey $RepositoryRoot @('native/hdr_codecs/CMakeLists.txt','third_party/cmake','third_party/dependencies.lock.json',
     'tool/build/build_hdr_codecs.ps1','tool/build/native_cache.ps1','tool/toolchain.ps1','tool/paths.ps1') $toolchain
+}
+
+function Get-HdrCacheKey([string]$CMake, [string]$Generator, [string]$Architecture) {
+  $dependencies = Get-HdrDependencyKey $CMake $Generator $Architecture
+  Get-NativeInputKey $RepositoryRoot @('native/hdr_codecs') $dependencies
 }
 
 function Get-FfmpegCacheKey([string]$CompilerDirectory) {
@@ -81,3 +95,9 @@ $FfmpegCacheRequired = @('runtime/manifest.json','runtime/ffmpeg.exe','runtime/f
   'runtime/viewer_hdr_video.exe','runtime/licenses/COPYING.LGPLv2.1',
   'install/include/libavcodec/avcodec.h','install/lib/libavcodec.dll.a',
   'sysroot/mingw64/include/libplacebo/renderer.h')
+
+$HdrCacheDirectories = @('bin','licenses')
+$HdrCacheRequired = @('bin/viewer_gainmap.exe','bin/viewer_heif_gainmap.exe','bin/viewer_raw.exe','bin/viewer_avif_animation.exe',
+  'licenses/hdr/LibRaw-LICENSE.CDDL','licenses/hdr/libavif-LICENSE','licenses/hdr/lcms2-LICENSE',
+  'licenses/hdr/libaom-LICENSE','licenses/hdr/libaom-PATENTS','licenses/hdr/libultrahdr-LICENSE',
+  'licenses/hdr/Adobe-Gain-Map-NOTICE','licenses/hdr/libjpeg-turbo-LICENSE.md')

@@ -23,9 +23,15 @@ try {
   Assert (-not (Test-NativeCacheManifest $root $key $dirs $required))
   Write-NativeCacheManifest $root $key $dirs
   Assert (Test-NativeCacheManifest $root $key $dirs $required)
+  Assert (-not (Test-NativeIncrementalBuild $root 'dependencies-1' $dirs $required))
+  [IO.File]::WriteAllText((Join-Path $root 'CMakeCache.txt'), 'configured build tree')
+  @{schema=1;key='dependencies-1'} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $root 'build-state.json')
+  Assert (Test-NativeIncrementalBuild $root 'dependencies-1' $dirs $required)
+  Assert (-not (Test-NativeIncrementalBuild $root 'dependencies-2' $dirs $required))
   Assert (-not (Test-NativeCacheManifest $root 'different-key' $dirs $required))
   [IO.File]::WriteAllText((Join-Path $root 'bin/codec.exe'), 'changed binary')
   Assert (-not (Test-NativeCacheManifest $root $key $dirs $required))
+  Assert (-not (Test-NativeIncrementalBuild $root 'dependencies-1' $dirs $required))
   Assert ($key -ne (Get-NativeInputKey $root $dirs 'compiler-1'))
   Write-NativeCacheManifest $root $key $dirs
   Assert (Test-NativeCacheManifest $root $key $dirs $required)
@@ -34,7 +40,7 @@ try {
   Remove-Item -LiteralPath (Join-Path $root 'bin/extra.dll')
   Remove-Item -LiteralPath (Join-Path $root 'licenses/LICENSE')
   Assert (-not (Test-NativeCacheManifest $root $key $dirs $required))
-  Write-Output 'PASS: native cache keys, corruption, missing files, extra files and toolchain invalidation'
+  Write-Output 'PASS: native cache keys, incremental build eligibility, corruption, missing files, extra files and toolchain invalidation'
 } finally {
   $absolute = [IO.Path]::GetFullPath($root)
   $temp = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('/','\') + [IO.Path]::DirectorySeparatorChar
