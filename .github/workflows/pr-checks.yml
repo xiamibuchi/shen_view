@@ -68,6 +68,9 @@ jobs:
       - name: Test verified downloads
         shell: pwsh
         run: ./tool/check/ffmpeg_download_test.ps1
+      - name: Test SDK identity and archive validation
+        shell: pwsh
+        run: ./tool/check/native_sdk_test.ps1
       - name: Generate and check source
         shell: pwsh
         env:

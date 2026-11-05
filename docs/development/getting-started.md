@@ -47,8 +47,9 @@ powershell -ExecutionPolicy Bypass -File tool/build/build_hdr_codecs.ps1
 ```
 
 Flutter 构建会准备归档、SVG、AVIF 和 FFmpeg 后端，固定依赖会自动下载并校验。
-FFmpeg 首次构建需要 Git Bash、MinGW GCC 和 7-Zip。上面的独立脚本也准备原生测试与探针使用的组件；
-清理原生缓存后需重新构建。
+Windows x64 默认复用[版本化原生 SDK](native-sdk.md)，仅编译自有 helper，仍需 MSVC
+和 MinGW GCC。明确选择第三方源码构建时还需要 Git Bash 和 7-Zip。上面的独立脚本
+也准备原生测试与探针使用的组件；清理后会重新获取并校验 SDK。
 
 之后在 `apps/viewer/` 中启动开发运行：
 

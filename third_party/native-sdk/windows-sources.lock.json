@@ -1,0 +1,8 @@
+[
+  {
+    "package": "mingw-w64-x86_64-libplacebo",
+    "binarySha256": "1D473B23B2B9A39403276734E39F8368593151B658729B4D18B827FF0072A3BF",
+    "url": "https://repo.msys2.org/mingw/sources/mingw-w64-libplacebo-7.387.0-1.src.tar.zst",
+    "sha256": "524698cf028391134e1ce199fe47ebbefb4e26b2d4cb68273365448103031942"
+  }
+]

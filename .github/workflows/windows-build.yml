@@ -20,14 +20,33 @@ permissions:
   contents: read
 
 jobs:
+  sdk-plan:
+    name: Select dependency SDK
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.plan.outputs.build }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: plan
+        shell: pwsh
+        env:
+          SDK_BASE_SHA: ${{ inputs.base-sha }}
+        run: ./tool/ci/native-sdk.ps1 -Action Plan -BaseSha $env:SDK_BASE_SHA
   native:
+    needs: sdk-plan
+    if: needs.sdk-plan.outputs.build == 'true'
     uses: ./.github/workflows/native-build.yml
     with:
       ref: ${{ inputs.ref }}
       artifact-prefix: ${{ inputs.artifact-name }}-native
   windows:
     name: Windows checks and portable
-    needs: native
+    needs: [sdk-plan, native]
+    if: always() && needs.sdk-plan.result == 'success' && (needs.native.result == 'success' || needs.native.result == 'skipped')
     runs-on: windows-2025
     timeout-minutes: 90
     defaults:
@@ -104,22 +123,35 @@ jobs:
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/ffmpeg_download_test.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Test SDK identity and archive validation
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/native_sdk_test.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Test full and split check entries
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/check_entry_test.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-      - name: Download HDR helpers
+      - name: Download candidate HDR SDK
+        if: needs.sdk-plan.outputs.build == 'true'
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ${{ inputs.artifact-name }}-native-hdr
-          path: build/hdr-codecs
-      - name: Download FFmpeg runtime and SDK
+          path: artifacts/sdk-candidate
+      - name: Download candidate FFmpeg SDK
+        if: needs.sdk-plan.outputs.build == 'true'
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ${{ inputs.artifact-name }}-native-ffmpeg
-          path: build/ffmpeg/windows-x64
-      - name: Verify transferred native components
-        run: ./tool/ci/native-cache.ps1 -Action Verify
+          path: artifacts/sdk-candidate
+      - name: Restore and verify dependency SDK
+        env:
+          SDK_CANDIDATE: ${{ needs.sdk-plan.outputs.build }}
+        run: |
+          if ($env:SDK_CANDIDATE -eq 'true') {
+            ./tool/ci/native-sdk.ps1 -CandidateDirectory artifacts/sdk-candidate
+          } else {
+            ./tool/ci/native-sdk.ps1
+          }
       - name: Prepare dependencies and generated source
         env:
           CI_BASE_SHA: ${{ inputs.base-sha }}

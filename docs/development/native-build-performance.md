@@ -41,4 +41,20 @@ helper 改动直接进入 CMake 构建，不主动重新配置。CMake 自行维
 
 拆分 job 减少串行等待，不减少编译总工作量；需计入额外 runner 初始化及 artifact 传输。
 原生 job 的构建耗时保留在 Actions 摘要和各自诊断 artifact 的 `native-timings.jsonl`。
-本次未引入版本化 SDK 发布，也未调整 FFmpeg 编解码白名单或移除测试。
+该轮对照未引入版本化 SDK 发布，也未调整 FFmpeg 编解码白名单或移除测试。
+
+## 版本化 SDK
+
+2026-11-05 在同一本机对完整脚本另做对照。源码与 SDK 两组分别并行运行 HDR/FFmpeg；
+包含配置、准备和产物校验，不是纯编译时间。SDK 组移走原始构建树，从含空格和中文的
+目录重新链接；确认 HDR CMake 没有第三方库目标，FFmpeg 不执行 configure/make。
+
+| 组件 | 源码构建脚本 | 已解压 SDK 的 helper 构建脚本 |
+| --- | ---: | ---: |
+| HDR | 166.2 秒 | 12.0 秒 |
+| FFmpeg | 233.2 秒 | 3.7 秒 |
+
+本机单独解压及校验：HDR 0.18 秒、FFmpeg 0.50 秒。开发 SDK ZIP 约为 12.3 MiB 和
+22.0 MiB；对应源码另行分发，不计入普通 PR 下载量。上述数据不包含从 GitHub 下载
+SDK，也不包含 Flutter 构建、测试、runner 初始化及打包时间。云端收益需按已发布 SDK
+的普通 PR 实测，不能由本机数据直接换算。维护与更新步骤见[原生 SDK](native-sdk.md)。
