@@ -11,7 +11,7 @@
 - ImageMagick 的 NOTICE 按原有组件标题分节，保留节内全文及可能存在的前言，使 libheif、
   libde265 等委托解码库可搜索。无法识别分节时保留整份文件。
 - 不扫描系统安装的软件，也不联网下载许可。未随当前应用打包的可选外部程序不纳入此列表。
-- 源文件仍随安装包完整提供；界面展示不替代对应组件的其他分发义务。
+- 原始许可文本仍随安装包完整提供；界面展示不替代对应组件的其他分发义务。
 
 ## 开发依赖
 
@@ -36,3 +36,6 @@ Windows 完整分发继续运行 tool/build/package_windows_codecs.ps1；它将�
 放到 Release/codecs。HDR CMake 同时收集 libaom 的 LICENSE 和 PATENTS。
 macOS 的 archive/SVG 构建脚本将已打包组件的许可放在 Contents/MacOS/codecs/licenses。
 新增原生组件时，必须在对应构建流程收集实际分发版本的许可；列表会随目录内容更新。
+
+公开发布时另提供与实际应用 ZIP 绑定的[对应源码附件](source-delivery.md)，包括上游覆盖代码、
+修改与构建资料。源码锁按二进制哈希匹配；更新依赖时同时更新，不能仅提供上游主页或本地相对路径。

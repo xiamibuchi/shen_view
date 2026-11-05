@@ -1,11 +1,12 @@
 # Windows 打包与分发
 
 Windows x64 已接入 Inno Setup 7 EXE、MSIX、ZIP、WinGet 和 Scoop。最低系统版本声明为
-Windows 10 2004（10.0.19041）；最低版本实机、干净环境和可信签名安装仍需发布验收。
+Windows 10 2004（10.0.19041）；便携包已完成该系统的干净虚拟机验收，正式安装器另行验收。
 macOS 的 DMG、Homebrew Cask 保留在后续范围，尚未实现；不生成 MSI。
 
 EXE 与独立[验证包入口](../../packaging/windows/inno/README.md)共用 Inno 源码。
-正式下载地址、项目许可和可信证书未提供时，只生成 unsigned 包及渠道模板，不对外发布。
+0.1.0 预览版采用 Apache-2.0，通过 GitHub Releases 分发未签名 Windows 便携 ZIP；官网和包管理器渠道后续再做。
+未签名状态、下载校验及第三方源码附件见[源码与下载说明](source-delivery.md)。安装器、MSIX 不随便携发布流程自动交付。
 Inno 验证包将主程序直接放在安装根目录，使用单一 uninstall.exe 卸载入口；支持旧预览 app/ 结构转换和显式完全卸载。
 新安装不生成 install.ini，安装状态使用 Windows 卸载记录；恢复副本集中在受限的 ProgramData/ShenView/Installer/Transactions 临时目录。
 Windows 运行包按加载边界组织组件：ImageMagick 及共享 HEIF 读取器位于 codecs/imagemagick/，压缩包引擎位于 codecs/archive/；核心启动 DLL 保留在应用根目录。
@@ -86,9 +87,12 @@ Inno 复用应用自身的无界面注册命令，Scoop 卸载调用同一清理
 
 ## 正式签名与渠道清单
 
-尚无正式下载地址、主页、软件许可及证书时，只生成本地 unsigned 产物与模板，不发布外部仓库。
-正式发布需要真实元数据、CurrentUser/My 中带私钥的代码签名证书，以及与证书 Subject
-一致的 MSIX Publisher。软件许可需由项目方确定；随包第三方许可不能代替项目自身许可。
+当前预览版不购买证书，不签名；不要求用户关闭系统安全防护或安装自签名根证书。
+下载页使用 https://github.com/xiamibuchi/shen_view/releases，每个版本使用固定 tag 的下载地址；
+公开前需核对验收、第三方许可及对应源码附件，不把未签名等同于无需验收。
+
+以下仅用于未来的签名发行和渠道接入。签名发行需要真实元数据、CurrentUser/My 中带私钥的
+代码签名证书，以及与证书 Subject 一致的 MSIX Publisher。随包第三方许可不因项目采用 Apache-2.0 而改变。
 
 ~~~powershell
 powershell -ExecutionPolicy Bypass -File tool/release/package_windows.ps1 -CertificateThumbprint <证书指纹> -Publisher "<证书 Subject>" -DownloadBaseUrl "https://<发布目录>" -Homepage "https://<项目主页>" -License "<软件许可>"

@@ -5,6 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { readArtifact, createDraft } = require('./release-draft.cjs');
+const { sourceFixture } = require('./release-test-fixture.cjs');
 
 test('release accepts only the clean merged commit and matching checksum', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'shenview-release-'));
@@ -40,6 +41,7 @@ test('publisher creates only a draft and refuses published releases or another S
   fs.writeFileSync(path.join(directory, 'release.json'), JSON.stringify(manifest));
   fs.writeFileSync(path.join(directory, manifest.package), 'zip');
   fs.writeFileSync(path.join(directory, 'SHA256SUMS.txt'), crypto.createHash('sha256').update('zip').digest('hex') + '  ' + manifest.package);
+  const source = sourceFixture(root, manifest);
   const context = { repo: { owner: 'xiamibuchi', repo: 'shen_view' }, payload: { pull_request: {
     merged: true, number: 8, merge_commit_sha: 'merged',
     head: { ref: 'release/0.1.0', repo: { full_name: 'xiamibuchi/shen_view' } },
@@ -61,11 +63,17 @@ test('publisher creates only a draft and refuses published releases or another S
     await createDraft({ github, context, core: { notice() {} } });
     assert.equal(writes[0].draft, true);
     assert.equal(writes[0].target_commitish, 'merged');
-    assert.equal(writes.length, 4);
+    assert.equal(writes.length, 13);
+    assert.match(writes[0].body, /unsigned|Unsigned/);
+    assert.ok(writes.some(write => write.name === 'SOURCES.json'));
+    assert.ok(writes.some(write => write.name === 'imagemagick-windows.zip'));
     existing = [{ tag_name: 'v0.1.0', draft: false, target_commitish: 'merged' }];
     await assert.rejects(createDraft({ github, context, core: {} }));
     existing = [{ tag_name: 'v0.1.0', draft: true, target_commitish: 'other' }];
     await assert.rejects(createDraft({ github, context, core: {} }));
-    assert.equal(writes.length, 4);
+    assert.equal(writes.length, 13);
+    fs.rmSync(path.join(source.sourceDirectory, 'SOURCES.json'));
+    await assert.rejects(createDraft({ github, context, core: {} }), /exactly one source/);
+    assert.equal(writes.length, 13);
   } finally { process.chdir(previous); fs.rmSync(root, { recursive: true }); }
 });

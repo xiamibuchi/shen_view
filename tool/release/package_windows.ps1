@@ -154,7 +154,7 @@ try {
   Copy-Item -LiteralPath $payload -Destination $portable -Recurse
   SaveText (Join-Path $portable 'installation-mode') 'portable'
   [IO.Directory]::CreateDirectory((Join-Path $portable 'user-data')) | Out-Null
-  SaveText (Join-Path $portable 'README-portable.txt') "ShenView $version portable: extract the entire archive before running ShenView.exe. Settings and archive cache are stored in user-data. File associations are optional in Settings > General. Remove associations before moving or deleting this copy. Complex SVG requires Microsoft Edge WebView2 Runtime."
+  SaveText (Join-Path $portable 'README-portable.txt') "ShenView $version portable: extract the entire archive before running ShenView.exe. Settings and archive cache are stored in user-data. File associations are optional in Settings > General. Remove associations before moving or deleting this copy. Complex SVG requires Microsoft Edge WebView2 Runtime. This preview is unsigned; Windows may show SmartScreen warnings. Do not disable system security protections. Project license: LICENSE. Third-party notices: codecs/licenses and the application license page. Corresponding source archives, patches and build instructions: https://github.com/xiamibuchi/shen_view/releases/tag/v$version (SOURCES.json and SOURCES.md)."
   $zipName = "ShenView-$fileVersion-windows-x64-portable.zip"
   $exeName = "ShenView-$fileVersion-windows-x64-setup.exe"
   $msixName = "ShenView-$fileVersion-windows-x64.msix"

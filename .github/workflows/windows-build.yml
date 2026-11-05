@@ -123,6 +123,10 @@ jobs:
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/ffmpeg_download_test.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Test release source provenance and downloads
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/release_sources_test.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Test SDK identity and archive validation
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/native_sdk_test.ps1
