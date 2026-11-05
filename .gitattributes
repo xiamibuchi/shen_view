@@ -1,5 +1,7 @@
 *.sh text eol=lf
 *.dart text eol=lf
+# Flutter gen-l10n follows pubspec.yaml's line endings.
+**/pubspec.yaml text eol=lf
 apps/viewer/macos/Flutter/GeneratedPluginRegistrant.swift text eol=lf
 apps/viewer/windows/flutter/generated_* text eol=lf
 .githooks/* text eol=lf
