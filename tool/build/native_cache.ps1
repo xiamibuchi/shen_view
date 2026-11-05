@@ -2,12 +2,14 @@ function Get-NativeInputKey([string]$Root, [string[]]$Inputs, [string]$Toolchain
   $records = @($Toolchain)
   foreach ($inputPath in $Inputs) {
     $absolute = Join-Path $Root $inputPath
-    $files = if (Test-Path -LiteralPath $absolute -PathType Container) {
-      @(Get-ChildItem -LiteralPath $absolute -Recurse -File | Sort-Object FullName)
-    } else { @(Get-Item -LiteralPath $absolute -ErrorAction Stop) }
+    [string[]]$files = if (Test-Path -LiteralPath $absolute -PathType Container) {
+      @(Get-ChildItem -LiteralPath $absolute -Recurse -File | ForEach-Object { $_.FullName })
+    } else { @((Get-Item -LiteralPath $absolute -ErrorAction Stop).FullName) }
+    # .NET Framework and modern .NET use different default culture collations.
+    [Array]::Sort($files, [StringComparer]::Ordinal)
     foreach ($file in $files) {
-      $relative = $file.FullName.Substring($Root.TrimEnd('/','\').Length + 1).Replace('\','/')
-      $records += $relative + ':' + (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+      $relative = $file.Substring($Root.TrimEnd('/','\').Length + 1).Replace('\','/')
+      $records += $relative + ':' + (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash
     }
   }
   $hash = [Security.Cryptography.SHA256]::Create()
