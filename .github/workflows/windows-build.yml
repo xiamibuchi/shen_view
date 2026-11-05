@@ -125,19 +125,19 @@ jobs:
         env:
           CI_BASE_SHA: ${{ inputs.base-sha }}
         run: |
-          & ./tool/ci/windows.ps1 -Phase Prepare *>&1 | Tee-Object -FilePath artifacts/ci/prepare.log
+          & ./tool/ci/windows.ps1 -Phase Prepare *>&1 | Tee-Object -FilePath (Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci/prepare.log')
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build Windows and native codecs
         run: |
-          & ./tool/ci/windows.ps1 -Phase Build *>&1 | Tee-Object -FilePath artifacts/ci/build.log
+          & ./tool/ci/windows.ps1 -Phase Build *>&1 | Tee-Object -FilePath (Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci/build.log')
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Flutter tests and native smoke
         run: |
-          & ./tool/ci/windows.ps1 -Phase Test -StaticChecked:('${{ inputs.static-checked }}' -eq 'true') *>&1 | Tee-Object -FilePath artifacts/ci/tests.log
+          & ./tool/ci/windows.ps1 -Phase Test -StaticChecked:('${{ inputs.static-checked }}' -eq 'true') *>&1 | Tee-Object -FilePath (Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci/tests.log')
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Package and verify portable
         run: |
-          & ./tool/ci/windows.ps1 -Phase Package *>&1 | Tee-Object -FilePath artifacts/ci/package.log
+          & ./tool/ci/windows.ps1 -Phase Package *>&1 | Tee-Object -FilePath (Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci/package.log')
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Upload portable and build records
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
