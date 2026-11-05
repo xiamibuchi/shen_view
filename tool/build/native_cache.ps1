@@ -17,6 +17,11 @@ function Get-NativeInputKey([string]$Root, [string[]]$Inputs, [string]$Toolchain
   finally { $hash.Dispose() }
 }
 
+function Get-NativeCiCacheKey([string]$Component, [string]$InputKey) {
+  $image = if ($env:ImageVersion) { $env:ImageVersion } else { 'local' }
+  return "windows-x64-$Component-v2-$image-$InputKey"
+}
+
 function Get-NativeCacheFiles([string]$Root, [string[]]$Directories) {
   foreach ($directory in $Directories) {
     Get-ChildItem -LiteralPath (Join-Path $Root $directory) -File -Recurse -ErrorAction Stop |
@@ -48,7 +53,16 @@ function Test-NativeCacheManifest([string]$Root, [string]$Key, [string[]]$Direct
   } catch { return $false }
 }
 
-function Get-HdrCacheKey([string]$CMake, [string]$Generator, [string]$Architecture) {
+function Test-NativeIncrementalBuild([string]$Root, [string]$BuildKey, [string[]]$Directories, [string[]]$Required) {
+  try {
+    $state = Get-Content -LiteralPath (Join-Path $Root 'build-state.json') -Raw -ErrorAction Stop | ConvertFrom-Json
+    if ($state.schema -ne 1 -or $state.key -cne $BuildKey -or -not (Test-Path -LiteralPath (Join-Path $Root 'CMakeCache.txt'))) { return $false }
+    $manifest = Get-Content -LiteralPath (Join-Path $Root 'cache-manifest.json') -Raw -ErrorAction Stop | ConvertFrom-Json
+    return Test-NativeCacheManifest $Root $manifest.key $Directories $Required
+  } catch { return $false }
+}
+
+function Get-HdrDependencyKey([string]$CMake, [string]$Generator, [string]$Architecture) {
   $installation = & (Resolve-ShenViewVsWhere) -latest -products '*' -property installationPath
   if ($LASTEXITCODE -ne 0 -or -not $installation) { throw 'Visual Studio not found' }
   $compiler = Get-ChildItem -LiteralPath (Join-Path $installation 'VC/Tools/MSVC') -Directory |
@@ -59,9 +73,14 @@ function Get-HdrCacheKey([string]$CMake, [string]$Generator, [string]$Architectu
     Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
   $cmakeVersion = & $CMake --version
   if ($LASTEXITCODE) { throw 'Cannot identify CMake' }
-  $toolchain = @($Architecture,$Generator,$cmakeVersion[0],(Get-FileHash $cl -Algorithm SHA256).Hash,$sdk.Name,$env:ImageVersion) -join ':'
-  Get-NativeInputKey $RepositoryRoot @('native/hdr_codecs','third_party/cmake','third_party/dependencies.lock.json',
+  $toolchain = @($Architecture,$Generator,$cmakeVersion[0],(Get-FileHash $cl -Algorithm SHA256).Hash,$sdk.Name) -join ':'
+  Get-NativeInputKey $RepositoryRoot @('native/hdr_codecs/CMakeLists.txt','third_party/cmake','third_party/dependencies.lock.json',
     'tool/build/build_hdr_codecs.ps1','tool/build/native_cache.ps1','tool/toolchain.ps1','tool/paths.ps1') $toolchain
+}
+
+function Get-HdrCacheKey([string]$CMake, [string]$Generator, [string]$Architecture) {
+  $dependencies = Get-HdrDependencyKey $CMake $Generator $Architecture
+  Get-NativeInputKey $RepositoryRoot @('native/hdr_codecs') $dependencies
 }
 
 function Get-FfmpegCacheKey([string]$CompilerDirectory) {
@@ -70,7 +89,7 @@ function Get-FfmpegCacheKey([string]$CompilerDirectory) {
   if ($LASTEXITCODE) { throw 'Cannot identify GCC version' }
   $target = & $compiler -dumpmachine
   if ($LASTEXITCODE) { throw 'Cannot identify GCC target' }
-  $toolchain = @($version,$target,(Get-FileHash $compiler -Algorithm SHA256).Hash,$env:ImageVersion) -join ':'
+  $toolchain = @($version,$target,(Get-FileHash $compiler -Algorithm SHA256).Hash) -join ':'
   Get-NativeInputKey $RepositoryRoot @('third_party/ffmpeg','tool/build/build_ffmpeg.ps1',
     'tool/build/native_cache.ps1','tool/toolchain.ps1','tool/paths.ps1') $toolchain
 }
@@ -81,3 +100,9 @@ $FfmpegCacheRequired = @('runtime/manifest.json','runtime/ffmpeg.exe','runtime/f
   'runtime/viewer_hdr_video.exe','runtime/licenses/COPYING.LGPLv2.1',
   'install/include/libavcodec/avcodec.h','install/lib/libavcodec.dll.a',
   'sysroot/mingw64/include/libplacebo/renderer.h')
+
+$HdrCacheDirectories = @('bin','licenses')
+$HdrCacheRequired = @('bin/viewer_gainmap.exe','bin/viewer_heif_gainmap.exe','bin/viewer_raw.exe','bin/viewer_avif_animation.exe',
+  'licenses/hdr/LibRaw-LICENSE.CDDL','licenses/hdr/libavif-LICENSE','licenses/hdr/lcms2-LICENSE',
+  'licenses/hdr/libaom-LICENSE','licenses/hdr/libaom-PATENTS','licenses/hdr/libultrahdr-LICENSE',
+  'licenses/hdr/Adobe-Gain-Map-NOTICE','licenses/hdr/libjpeg-turbo-LICENSE.md')

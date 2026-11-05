@@ -40,6 +40,9 @@ README.md、docs/ 下普通 Markdown 说明跳过 Windows；混合改动、空�
 - Quick checks 在 Ubuntu 执行格式、生成文件、custom_lint 和 analyze，与 Windows 构建并行。
   Windows 继续运行全部 Flutter 测试和原生、便携包验证；任一任务失败都会拦截 PR checks。
   发布工作流不传 static-checked，因此合并提交仍在 Windows 重新运行完整检查。
+- HDR helpers 和 FFmpeg 在两个独立 Windows job 构建，均成功后才启动应用构建与验包。
+  同一运行的原生产物通过 artifact 传递，接收端核对当前源码、工具链、文件哈希和必要许可；
+  不匹配直接失败，不以接收端临时重编掩盖传递错误。PR 与发布构建使用相同流程。
 - 构建 Release 与随包解码器，明确指定测试用 ImageMagick，避免关键用例因缺依赖跳过。
 - 完整测试前单独解码 Dolby Vision 样本；原生失败日志保留 Vulkan 与解码阶段错误。
 - 执行原生队列测试，生成 unsigned Windows x64 portable ZIP，解压后检查版本、哈希、
@@ -59,9 +62,14 @@ MSYS2 安装前更新软件包数据库与基础工具；GCC、Mesa 和托管 ru
 下载缓存之外，复用 HDR/RAW/AVIF helper 及 FFmpeg 运行组件和 SDK。缓存键包括对应源码、
 依赖锁、补丁、构建脚本、编译器、CMake/SDK 和 runner 镜像版本；每次使用前校验文件清单、
 SHA256 与必要许可证，缺失或损坏则重建。不缓存 Flutter、CMake 和 FFmpeg 的中间对象目录。
+runner 镜像版本用于隔离 Actions 缓存；跨 job 的产物身份由实际源码、配置及工具链决定。
+同一次运行可能分配不同镜像版本，不能仅因镜像编号不同拒绝工具链一致的产物。
 构建及完整性校验成功后即保存原生和下载缓存，后续测试失败仍会拦截合并，但不会丢弃已验证的构建缓存。
 FFmpeg 下载设单次 90 秒超时、最多三次尝试；临时文件通过 SHA256 校验后才移入下载缓存。
 Windows 的 AVIF 与 HDR helper 统一使用 build/hdr-codecs，构建、测试和打包不再分别编译 AVIF。
+本地 HDR 依赖和工具链一致、现有输出校验通过时保留 CMake 构建树；只改 helper 源码走增量构建。
+依赖、编译配置或工具链变化，以及输出损坏、构建状态缺失时仍清理重建。构建状态和中间对象不上传到缓存。
+并行与增量构建的测量方法见 [原生构建耗时对照](native-build-performance.md)。
 FFmpeg helper 源码变化仅重编 helper，底层库复用已校验的 SDK；依赖或工具链变化完整重建。
 Warm native dependencies 在 main/release 原生构建输入变化后预热分支缓存，也可手动执行。
 PR 缓存受 GitHub 分支作用域限制，不作为其他 PR 的公共依赖来源。损坏的远端缓存应在

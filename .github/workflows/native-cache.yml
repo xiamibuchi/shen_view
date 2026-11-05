@@ -12,6 +12,7 @@ on:
       - 'tool/toolchain.ps1'
       - 'tool/ci/native-cache.ps1'
       - '.github/workflows/native-cache.yml'
+      - '.github/workflows/native-build.yml'
 
 permissions:
   contents: read
@@ -22,73 +23,8 @@ concurrency:
 
 jobs:
   native:
-    runs-on: windows-2025
-    timeout-minutes: 45
-    defaults:
-      run:
-        shell: pwsh
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
-        id: msys
-        with:
-          msystem: MINGW64
-          update: true
-          install: mingw-w64-x86_64-gcc
-      - name: Set compiler path
-        env:
-          MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
-        run: Add-Content $env:GITHUB_PATH (Join-Path $env:MSYS_LOCATION 'mingw64/bin')
-      - name: Identify native build inputs
-        id: native-keys
-        run: ./tool/ci/native-cache.ps1 -Action Keys
-      - name: Cache HDR helpers
-        id: hdr-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          key: ${{ steps.native-keys.outputs.hdr }}
-          path: |
-            build/hdr-codecs/bin
-            build/hdr-codecs/licenses
-            build/hdr-codecs/cache-manifest.json
-      - name: Cache FFmpeg runtime and SDK
-        id: ffmpeg-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          key: ${{ steps.native-keys.outputs.ffmpeg }}
-          path: |
-            build/ffmpeg/windows-x64/runtime
-            build/ffmpeg/windows-x64/install/include
-            build/ffmpeg/windows-x64/install/lib
-            build/ffmpeg/windows-x64/install/bin
-            build/ffmpeg/windows-x64/sysroot/mingw64/include
-            build/ffmpeg/windows-x64/sysroot/mingw64/lib
-            build/ffmpeg/windows-x64/cache-manifest.json
-      - name: Build and verify HDR helpers
-        run: ./tool/build/build_hdr_codecs.ps1
-      - name: Save verified HDR helpers
-        if: steps.hdr-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          key: ${{ steps.native-keys.outputs.hdr }}
-          path: |
-            build/hdr-codecs/bin
-            build/hdr-codecs/licenses
-            build/hdr-codecs/cache-manifest.json
-      - name: Build and verify FFmpeg runtime and SDK
-        run: ./tool/build/build_ffmpeg.ps1
-      - name: Save verified FFmpeg runtime and SDK
-        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          key: ${{ steps.native-keys.outputs.ffmpeg }}
-          path: |
-            build/ffmpeg/windows-x64/runtime
-            build/ffmpeg/windows-x64/install/include
-            build/ffmpeg/windows-x64/install/lib
-            build/ffmpeg/windows-x64/install/bin
-            build/ffmpeg/windows-x64/sysroot/mingw64/include
-            build/ffmpeg/windows-x64/sysroot/mingw64/lib
-            build/ffmpeg/windows-x64/cache-manifest.json
+    uses: ./.github/workflows/native-build.yml
+    with:
+      ref: ${{ github.sha }}
+      artifact-prefix: native-warm-${{ github.run_id }}
+      upload-artifacts: false
