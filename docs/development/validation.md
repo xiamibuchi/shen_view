@@ -13,6 +13,7 @@ powershell -ExecutionPolicy Bypass -File tool/check/check.ps1
 ~~~
 
 脚本依次执行 custom_lint、analyze 和单元/Widget 测试，全部通过才返回 0。
+CI 可通过 -Mode Static 或 -Mode Test 分别执行静态检查或完整测试；不传参数仍运行全部。
 原生构建、集成和实屏效果另验，Windows 总流程见 [真机回归](windows-regression.md)。
 
 ## 专项入口

@@ -49,6 +49,27 @@ jobs:
           COMMIT_PR_BASE: ${{ github.event.pull_request.base.sha }}
           COMMIT_PR_HEAD: ${{ github.event.pull_request.head.sha }}
         run: sh tool/check/commit_message.sh --event
+  quick:
+    name: Quick checks
+    needs: plan
+    if: needs.plan.outputs.windows_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          cache: true
+      - name: Generate and check source
+        shell: pwsh
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: ./tool/ci/quick.ps1
   windows:
     needs: plan
     if: needs.plan.outputs.windows_required == 'true'
@@ -57,10 +78,11 @@ jobs:
       ref: ${{ github.ref }}
       base-sha: ${{ github.event.pull_request.base.sha }}
       artifact-name: windows-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
+      static-checked: true
   gate:
     name: PR checks
     if: always()
-    needs: [plan, commits, windows]
+    needs: [plan, commits, quick, windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

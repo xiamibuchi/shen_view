@@ -37,6 +37,9 @@ README.md、docs/ 下普通 Markdown 说明跳过 Windows；混合改动、空�
 - Windows/macOS/Linux 验证提交检查工具及 PR 新增的普通提交。
 - Windows 构建先下载 LFS 样本，使用锁定 Flutter，生成本地化与许可排除表并检查漂移。
 - 检查本 PR 修改的 Dart 文件格式；custom_lint、analyze、Flutter 测试仍覆盖整个工程。
+- Quick checks 在 Ubuntu 执行格式、生成文件、custom_lint 和 analyze，与 Windows 构建并行。
+  Windows 继续运行全部 Flutter 测试和原生、便携包验证；任一任务失败都会拦截 PR checks。
+  发布工作流不传 static-checked，因此合并提交仍在 Windows 重新运行完整检查。
 - 构建 Release 与随包解码器，明确指定测试用 ImageMagick，避免关键用例因缺依赖跳过。
 - 完整测试前单独解码 Dolby Vision 样本；原生失败日志保留 Vulkan 与解码阶段错误。
 - 执行原生队列测试，生成 unsigned Windows x64 portable ZIP，解压后检查版本、哈希、
@@ -53,7 +56,15 @@ MSYS2 安装前更新软件包数据库与基础工具；GCC、Mesa 和托管 ru
 构建前检查实例创建和设备枚举，结束后移除登记；不修改开发者本机注册表。
 这覆盖解码计算与取消/重建逻辑，真实显卡性能、HDR 显示及驱动兼容仍需实机验收。
 含非 ASCII 文本的 PowerShell 脚本使用 UTF-8 BOM，CI 另用 Windows PowerShell 5.1 解析检查。
-只缓存经过校验的下载文件，不跨 PR 复用本地 CMake/编译输出。缓存不是源码或发布渠道。
+下载缓存之外，复用 HDR/RAW/AVIF helper 及 FFmpeg 运行组件和 SDK。缓存键包括对应源码、
+依赖锁、补丁、构建脚本、编译器、CMake/SDK 和 runner 镜像版本；每次使用前校验文件清单、
+SHA256 与必要许可证，缺失或损坏则重建。不缓存 Flutter、CMake 和 FFmpeg 的中间对象目录。
+构建及完整性校验成功后即保存原生和下载缓存，后续测试失败仍会拦截合并，但不会丢弃已验证的构建缓存。
+Windows 的 AVIF 与 HDR helper 统一使用 build/hdr-codecs，构建、测试和打包不再分别编译 AVIF。
+FFmpeg helper 源码变化仅重编 helper，底层库复用已校验的 SDK；依赖或工具链变化完整重建。
+Warm native dependencies 在 main/release 原生构建输入变化后预热分支缓存，也可手动执行。
+PR 缓存受 GitHub 分支作用域限制，不作为其他 PR 的公共依赖来源。损坏的远端缓存应在
+Actions 中删除；本次运行仍从源码重建。缓存不是源码或发布渠道。
 PR 代码在无发布密钥、contents: read 的托管 runner 执行，不使用 pull_request_target 构建 PR。
 fork 首次工作流可能需要 GitHub 的运行批准。
 
@@ -71,6 +82,9 @@ powershell -ExecutionPolicy Bypass -File tool/release/package_windows_portable.p
 不需要安装器编译器、MSIX 工具或证书。首次执行仍需要开发入门列出的构建工具。
 输出位于 artifacts/releases/<Windows四段版本>/windows-x64/portable-ci/。
 支持 -PayloadDirectory 复用已验证的干净载荷；此时不能声称重新构建了应用。
+
+windows.ps1 默认执行完整流程，也可用 -Phase Prepare/Build/Test/Package 分段复验。
+Test 默认包含完整静态检查和测试；-StaticChecked 仅用于已有独立静态检查门禁的 PR 工作流。
 
 ## Release 草稿
 

@@ -12,6 +12,9 @@ on:
       artifact-name:
         type: string
         required: true
+      static-checked:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -62,7 +65,8 @@ jobs:
           MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
         run: |
           & ./tool/check/vulkan_smoke.ps1 -Loader (Join-Path $env:MSYS_LOCATION 'mingw64/bin/vulkan-1.dll')
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        id: downloads-cache
         with:
           path: |
             build/windows-codecs/downloads
@@ -87,12 +91,86 @@ jobs:
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/powershell_compatibility.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-      - name: Check, build and verify portable
+      - name: Test native cache validation
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/native_cache_test.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Test full and split check entries
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/check_entry_test.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Identify native build inputs
+        id: native-keys
+        run: ./tool/ci/native-cache.ps1 -Action Keys
+      - name: Restore HDR helpers
+        id: hdr-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: ${{ steps.native-keys.outputs.hdr }}
+          path: |
+            build/hdr-codecs/bin
+            build/hdr-codecs/licenses
+            build/hdr-codecs/cache-manifest.json
+      - name: Restore FFmpeg runtime and SDK
+        id: ffmpeg-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: ${{ steps.native-keys.outputs.ffmpeg }}
+          path: |
+            build/ffmpeg/windows-x64/runtime
+            build/ffmpeg/windows-x64/install/include
+            build/ffmpeg/windows-x64/install/lib
+            build/ffmpeg/windows-x64/install/bin
+            build/ffmpeg/windows-x64/sysroot/mingw64/include
+            build/ffmpeg/windows-x64/sysroot/mingw64/lib
+            build/ffmpeg/windows-x64/cache-manifest.json
+      - name: Prepare dependencies and generated source
         env:
           CI_BASE_SHA: ${{ inputs.base-sha }}
         run: |
-          $log = Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci/windows.log'
-          & ./tool/ci/windows.ps1 *>&1 | Tee-Object -FilePath $log
+          & ./tool/ci/windows.ps1 -Phase Prepare *>&1 | Tee-Object -FilePath (Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci/prepare.log')
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build Windows and native codecs
+        run: |
+          & ./tool/ci/windows.ps1 -Phase Build *>&1 | Tee-Object -FilePath (Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci/build.log')
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Save verified downloads
+        if: steps.downloads-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: ${{ steps.downloads-cache.outputs.cache-primary-key }}
+          path: |
+            build/windows-codecs/downloads
+            build/ffmpeg/downloads
+      - name: Save verified HDR helpers
+        if: steps.hdr-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: ${{ steps.native-keys.outputs.hdr }}
+          path: |
+            build/hdr-codecs/bin
+            build/hdr-codecs/licenses
+            build/hdr-codecs/cache-manifest.json
+      - name: Save verified FFmpeg runtime and SDK
+        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: ${{ steps.native-keys.outputs.ffmpeg }}
+          path: |
+            build/ffmpeg/windows-x64/runtime
+            build/ffmpeg/windows-x64/install/include
+            build/ffmpeg/windows-x64/install/lib
+            build/ffmpeg/windows-x64/install/bin
+            build/ffmpeg/windows-x64/sysroot/mingw64/include
+            build/ffmpeg/windows-x64/sysroot/mingw64/lib
+            build/ffmpeg/windows-x64/cache-manifest.json
+      - name: Flutter tests and native smoke
+        run: |
+          & ./tool/ci/windows.ps1 -Phase Test -StaticChecked:('${{ inputs.static-checked }}' -eq 'true') *>&1 | Tee-Object -FilePath (Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci/tests.log')
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Package and verify portable
+        run: |
+          & ./tool/ci/windows.ps1 -Phase Package *>&1 | Tee-Object -FilePath (Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci/package.log')
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Upload portable and build records
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

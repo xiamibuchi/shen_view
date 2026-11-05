@@ -80,5 +80,5 @@ bash tool/check/staged_files_test.sh
 ```
 
 测试使用临时本地 Git/LFS 仓库，验证提交前拦截、暂存区属性，以及测试资料上传、克隆、
-拉取后的逐字节一致性，不连接 GitHub。当前 Actions 仍只检查提交信息，尚未接入大小
-检查；未来执行图片测试的工作流需在 checkout 中启用 `lfs: true`。
+拉取后的逐字节一致性，不连接 GitHub。Actions 尚未接入大小检查；Windows 图片测试
+工作流已在 checkout 中启用 `lfs: true`。

@@ -36,7 +36,10 @@ void main() {
         ),
       );
       addTearDown(() async {
+        final session = controller.archiveContext?.session;
         controller.dispose();
+        await controller.flushPersistence();
+        await session?.close();
         for (var attempt = 0; attempt < 10; attempt++) {
           try {
             await directory.delete(recursive: true);
@@ -116,7 +119,10 @@ void main() {
         ),
       );
       addTearDown(() async {
+        final session = controller.archiveContext?.session;
         controller.dispose();
+        await controller.flushPersistence();
+        await session?.close();
         for (var attempt = 0; attempt < 10; attempt++) {
           try {
             await directory.delete(recursive: true);
