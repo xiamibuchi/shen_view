@@ -180,6 +180,35 @@ void main() {
     },
   );
 
+  testWidgets('double page combines loaded primary and cached peer metadata', (
+    tester,
+  ) async {
+    _mockHost(tester);
+    final root = Directory.systemTemp.createTempSync('cached-spread-');
+    addTearDown(() => _deleteFixture(root));
+    final source = _scrollFixture(root, false);
+    await _pumpArchiveHost(
+      tester,
+      _host(
+        source,
+        settings: const ViewerSettings(
+          showDirectoryPanel: false,
+          doublePageFirstAlone: false,
+          doublePageWideAlone: false,
+        ),
+      ),
+    );
+    await _waitForSelectedImage(tester);
+    final bar = _bar(tester)!;
+    final peer = bar.controller.entries[1];
+    unawaited(bar.resources.metadata(peer));
+    await _waitFor(tester, () => bar.resources.cachedMetadata(peer) != null);
+    await _chooseMode(tester, '双页');
+    await _waitForSelectedImage(tester, minimum: 2);
+    expect(tester.takeException(), isNull);
+    await _finishViewer(tester, source);
+  });
+
   for (final archiveView in [false, true]) {
     testWidgets(
       'grid overview keeps filmstrip and restores reading ($archiveView)',
@@ -3751,17 +3780,19 @@ Future<void> _waitForSelectedImage(
         .future;
     var ready = metadata == null;
     Object? failure;
+    StackTrace? failureStack;
     unawaited(
       metadata?.then<void>(
         (_) => ready = true,
         onError: (Object error, StackTrace stack) {
           failure = error;
+          failureStack = stack;
           ready = true;
         },
       ),
     );
     await _waitFor(tester, () => ready);
-    expect(failure, isNull);
+    if (failure != null) Error.throwWithStackTrace(failure!, failureStack!);
   }
   await _waitForImage(tester);
   // AnimatedSwitcher retains outgoing pages; only the current child can prove

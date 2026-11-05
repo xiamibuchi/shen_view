@@ -6,11 +6,11 @@
   "components": {
     "hdr": {
       "asset": "shenview-hdr-sdk-windows-x64.zip",
-      "sha256": null
+      "sha256": "cd56c741cc69c068ee4181bf809b629cfc9731e39a4b035bdf442efdfd500de7"
     },
     "ffmpeg": {
       "asset": "shenview-ffmpeg-sdk-windows-x64.zip",
-      "sha256": null
+      "sha256": "ffbf922400f8edc9a82ec7f15d498360be830a04519717a8cc14ba21ffca4978"
     }
   }
 }

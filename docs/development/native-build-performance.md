@@ -59,13 +59,15 @@ helper 改动直接进入 CMake 构建，不主动重新配置。CMake 自行维
 SDK，也不包含 Flutter 构建、测试、runner 初始化及打包时间。云端收益需按已发布 SDK
 的普通 PR 实测，不能由本机数据直接换算。维护与更新步骤见[原生 SDK](native-sdk.md)。
 
-PR #18 在 GitHub `windows-2025` runner 上的两组脚本计时：
+PR #19 在 GitHub `windows-2022` SDK 生产 runner 上的两组脚本计时：
 
 | 组件 | 从源码构建并打包 SDK | 使用 SDK 重新编译及链接 helper |
 | --- | ---: | ---: |
-| HDR | 171.07 秒 | 9.73 秒 |
-| FFmpeg | 433.63 秒 | 1.99 秒 |
+| HDR | 165.16 秒 | 8.85 秒 |
+| FFmpeg | 405.39 秒 | 1.71 秒 |
 
 源码列包含库构建、源码附件及开发 SDK 打包；重新链接列使用该 SDK，编译当前 helper。
 两组件在不同 runner 并行，不能把耗时相加后当作流水线节省量。数据来自
-[PR #18](https://github.com/xiamibuchi/shen_view/actions/runs/42008343167) 的诊断附件。
+[PR #19](https://github.com/xiamibuchi/shen_view/actions/runs/42019075928) 的诊断附件。
+应用 job 在独立的 `windows-2025` runner 下载并校验 SDK，使用较新的 MSVC 构建；
+本机也已验证云端 VS2022 SDK 能被较新的 MSVC 链接并通过独立便携包验收。
