@@ -27,6 +27,10 @@ try {
   $recipePath = Join-Path $RepositoryRoot "recipe.txt"
   [IO.File]::WriteAllText($recipePath,"build`r`nRelease`r`n")
   $recipe = Get-NativeSdkRecipeKey
+  & {
+    Set-StrictMode -Version Latest
+    Assert ($recipe -ceq (Get-NativeSdkRecipeKey)) "optional sourceSubdir must work under packaging strict mode"
+  }
   [IO.File]::WriteAllText($recipePath,"build`nRelease`n")
   Assert ($recipe -ceq (Get-NativeSdkRecipeKey)) "recipe differs across checkout line endings"
   [IO.File]::WriteAllText($recipePath,"changed`n")
