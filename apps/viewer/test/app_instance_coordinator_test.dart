@@ -161,6 +161,76 @@ void main() {
     },
   );
 
+  test('PowerShell smoke mode changes serialize with application configuration writes', () async {
+    config = AppConfigStore(
+      filePath: paths.join(root.path, '中文 mode config.json'),
+    );
+    await config.write({
+      'settings': {'instanceMode': 'multiProcess', 'futureSetting': 42},
+      'session': {'initial': 'preserved'},
+    });
+    final survivor = (await start())!;
+    final received = <AppLaunchRequest>[];
+    survivor.attach(received.add);
+    Future<void> waitForFile(File file) async {
+      final deadline = DateTime.now().add(const Duration(seconds: 10));
+      while (!await file.exists()) {
+        if (DateTime.now().isAfter(deadline)) {
+          throw TimeoutException('Worker did not signal ${file.path}');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    }
+
+    String quote(String value) => "'${value.replaceAll("'", "''")}'";
+    final snapshotReady = File(paths.join(root.path, 'snapshot-ready'));
+    final release = File(paths.join(root.path, 'release-update'));
+    final editorReady = File(paths.join(root.path, 'editor-ready'));
+    final background = await worker('pause-config-update', [
+      snapshotReady.path,
+      release.path,
+    ]);
+    unawaited(background.stdout.drain<void>());
+    final backgroundErrors = background.stderr.transform(utf8.decoder).join();
+    try {
+      await waitForFile(snapshotReady);
+      final helper = paths.absolute(
+        '../../tool/check/windows_instance_helpers.ps1',
+      );
+      final editor = await Process.start('powershell.exe', [
+        '-NoProfile',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-Command',
+        '. ${quote(helper)}; '
+            '[IO.File]::WriteAllText(${quote(editorReady.path)}, "ready"); '
+            'Set-ShenViewSmokeInstanceMode '
+            '-ConfigPath ${quote(config.filePath)} -Mode singleProcess',
+      ]);
+      workers.add(editor);
+      unawaited(editor.stdout.drain<void>());
+      final editorErrors = editor.stderr.transform(utf8.decoder).join();
+      await waitForFile(editorReady);
+      final exitedBeforeRelease = await editor.exitCode
+          .then((_) => true)
+          .timeout(const Duration(seconds: 1), onTimeout: () => false);
+      await release.writeAsString('continue');
+      expect(await background.exitCode, 0, reason: await backgroundErrors);
+      expect(await editor.exitCode, 0, reason: await editorErrors);
+      final saved = await config.read();
+      expect(await start(), isNull);
+      expect(received.single.paths, isEmpty);
+      expect((saved['settings'] as Map)['instanceMode'], 'singleProcess');
+      expect(exitedBeforeRelease, isFalse);
+      expect((saved['settings'] as Map)['futureSetting'], 42);
+      expect((saved['session'] as Map)['recentFile'], 'background.png');
+      expect((saved['session'] as Map)['initial'], 'preserved');
+    } finally {
+      await release.writeAsString('continue');
+      await background.exitCode;
+    }
+  }, skip: !Platform.isWindows);
+
   test(
     'real processes forward requests and recover after an owner crashes',
     () async {
