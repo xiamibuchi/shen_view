@@ -1030,11 +1030,7 @@ class ImageResourceService {
           request.throwIfCancelled();
           final entry = _entries[key.version.path];
           if (entry == null) throw DecodeCancelled();
-          var rawDevelopment =
-              format == ImageFormat.raw &&
-              (!key.allowSmallRawPreview ||
-                  _rawPreviewRejected.contains(key) ||
-                  _metadata[key.version]?.values['rawPreviewBytes'] == '0');
+          var rawDevelopment = _requiresRawDevelopment(entry, key);
           var prepared = await _reserveDecode(
             entry,
             key,
@@ -1229,7 +1225,10 @@ class ImageResourceService {
         _decodeRoute(entry, key) == ImageDecodeRoute.flutter &&
             !_preferPlatform(entry, key, _codecRequests[key])
         ? math.max(0, entry.byteLength)
-        : _nativeOverhead(entry);
+        : _nativeOverhead(
+            entry,
+            rawDevelopment: _requiresRawDevelopment(entry, key),
+          );
     final minimum =
         encoded +
         math.min(256, key.targetWidth ?? entry.width ?? 256) *
@@ -1244,6 +1243,14 @@ class ImageResourceService {
     return minimum > _inflightBudget.limitBytes - headroom ||
         minimum + headroom <= _inflightBudget.availableBytes;
   }
+
+  // Admission must charge the same sensor workspace as the decode itself;
+  // an inexpensive camera preview cannot stand in for main-image development.
+  bool _requiresRawDevelopment(ImageEntry entry, ImageResourceKey key) =>
+      entry.format == ImageFormat.raw &&
+      (!key.allowSmallRawPreview ||
+          _rawPreviewRejected.contains(key) ||
+          _metadata[key.version]?.values['rawPreviewBytes'] == '0');
 
   // Large encoded inputs would consume the foreground reserve even for tiny
   // previews. Native backends receive a path and return bounded output instead.
