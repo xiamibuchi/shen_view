@@ -45,7 +45,8 @@ jobs:
         id: native-keys
         run: ./tool/ci/native-cache.ps1 -Action Keys
       - name: Cache HDR helpers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        id: hdr-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           key: ${{ steps.native-keys.outputs.hdr }}
           path: |
@@ -53,7 +54,8 @@ jobs:
             build/hdr-codecs/licenses
             build/hdr-codecs/cache-manifest.json
       - name: Cache FFmpeg runtime and SDK
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        id: ffmpeg-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           key: ${{ steps.native-keys.outputs.ffmpeg }}
           path: |
@@ -64,5 +66,29 @@ jobs:
             build/ffmpeg/windows-x64/sysroot/mingw64/include
             build/ffmpeg/windows-x64/sysroot/mingw64/lib
             build/ffmpeg/windows-x64/cache-manifest.json
-      - name: Build and verify native dependencies
-        run: ./tool/ci/native-cache.ps1 -Action Build
+      - name: Build and verify HDR helpers
+        run: ./tool/build/build_hdr_codecs.ps1
+      - name: Save verified HDR helpers
+        if: steps.hdr-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: ${{ steps.native-keys.outputs.hdr }}
+          path: |
+            build/hdr-codecs/bin
+            build/hdr-codecs/licenses
+            build/hdr-codecs/cache-manifest.json
+      - name: Build and verify FFmpeg runtime and SDK
+        run: ./tool/build/build_ffmpeg.ps1
+      - name: Save verified FFmpeg runtime and SDK
+        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: ${{ steps.native-keys.outputs.ffmpeg }}
+          path: |
+            build/ffmpeg/windows-x64/runtime
+            build/ffmpeg/windows-x64/install/include
+            build/ffmpeg/windows-x64/install/lib
+            build/ffmpeg/windows-x64/install/bin
+            build/ffmpeg/windows-x64/sysroot/mingw64/include
+            build/ffmpeg/windows-x64/sysroot/mingw64/lib
+            build/ffmpeg/windows-x64/cache-manifest.json

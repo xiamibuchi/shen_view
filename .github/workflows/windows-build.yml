@@ -95,6 +95,10 @@ jobs:
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/native_cache_test.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Test verified downloads
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/ffmpeg_download_test.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Test full and split check entries
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/check_entry_test.ps1
