@@ -5,10 +5,10 @@
 
 | 任务 | 自动验证覆盖 | 仍需单独确认 |
 | --- | --- | --- |
-| [#1 最低系统与干净环境](https://github.com/xiamibuchi/shen_view/issues/1) | Windows Release 构建、图片像素烟测、随包解码器与依赖检查 | Windows 10 2004（19041）x64、无开发工具链、离线运行及 WebView2 缺失 |
+| [#1 最低系统与干净环境](https://github.com/xiamibuchi/shen_view/issues/1) | 已完成 19041 x64 干净虚拟机的便携部署、离线格式与依赖、缺失 WebView2 验证；#23 修复后 25/25 组通过，记录见 Issue | 正式安装器由 #2 单独跟踪 |
 | [#2 安装、升级与卸载](https://github.com/xiamibuchi/shen_view/issues/2) | 独立验证身份的安装、重装、迁移、运行中阻止、数据保留/清理和故障恢复 | 正式身份的机器级关联、UAC、旧 NSIS 安装、真实跨版本升级及崩溃恢复边界 |
 | [#3 HDR 与 SDR 回退](https://github.com/xiamibuchi/shen_view/issues/3) | HDR 解码及策略测试、FP16 回读、透明合成、当前屏幕能力门控与 SDR 回退 | HDR 开/关下的实屏高光、切图、跨 HDR/SDR 屏幕、热插拔及恢复 |
-| [#4 许可与分发](https://github.com/xiamibuchi/shen_view/issues/4) | 随包许可、依赖版本、构建配方和来源清单核对 | 项目已采用 Apache-2.0；仍需落实第三方对应源码、签名方案和实际下载渠道 |
+| [#4 许可与分发](https://github.com/xiamibuchi/shen_view/issues/4) | Apache-2.0；GitHub Releases 未签名便携预览方案；按实际二进制锁定并校验源码、补丁、构建资料和许可附件 | 发布时核对全部源码附件与说明，见[源码交付](source-delivery.md) |
 
 ## 证据与输入
 
@@ -50,11 +50,11 @@ NOTICES.Z、原生 codecs/licenses、FFmpeg 依赖与构建配方，以及实际
 或通用项目主页不作为完成证据。详见[许可维护](open-source-licenses.md)和
 [压缩包分发许可](archive-licensing.md)。
 
-当前 CI 仅构建未签名 Windows 便携 ZIP；版本 PR 合入 main 后创建 Release 草稿，
+当前 CI 构建未签名 Windows 便携 ZIP；版本 PR 合入 main 后收集对应源码附件并创建 Release 草稿，
 公开发布前仍需完成验收，流程见[分支与 CI](../development/branches-and-ci.md)。
 发布说明需明确 ZIP 及其中 EXE 的未签名状态、未知发布者提示、
 WebView2 依赖和已知限制；不将未签名 MSIX 作为可直接安装的普通下载。
-不能要求用户关闭系统安全防护。可信签名与正式渠道提交按[分发文档](distribution.md)验收。
+不能要求用户关闭系统安全防护。预览版暂不签名；未来可信签名与渠道提交按[分发文档](distribution.md)另行验收。
 
 前置项有失败或未验时保留为版本待办。CI 只能自动执行已明确的检查，不能把硬件、
 最低系统或维护者决策的待验项变成通过。

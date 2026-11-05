@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { readSourceDelivery } = require('./source-delivery.cjs');
 
 function readArtifact(root, expectedSha) {
   const entries = fs.readdirSync(root, { recursive: true });
@@ -30,6 +31,7 @@ async function createDraft({ github, context, core }) {
     throw new Error('Only merged release PRs from this repository can create drafts');
   }
   const { manifest, directory, tag } = readArtifact('release-artifact', mergedSha);
+  const sourceAssets = readSourceDelivery('release-artifact', manifest);
   if (pr.head.ref !== 'release/' + manifest.version) throw new Error('Release branch and artifact version differ');
   const repo = context.repo;
   const releases = await github.paginate(github.rest.repos.listReleases, { ...repo, per_page: 100 });
@@ -52,9 +54,16 @@ async function createDraft({ github, context, core }) {
       'Source commit: ' + mergedSha,
       'Release PR: #' + pr.number,
       '',
+      'Download: https://github.com/' + repo.owner + '/' + repo.repo + '/releases/tag/' + tag,
+      'Unsigned portable ZIP: extract the entire archive before running ShenView.exe.',
+      'Windows may show SmartScreen warnings. Checksums do not replace publisher signing.',
+      'Do not disable Windows security protections. No unsigned MSIX is offered for normal installation.',
+      'Source delivery: download every source asset listed in SOURCES.json from this same release.',
+      'See SOURCES.md for licenses, rebuilding, component replacement and known runtime requirements.',
+      '',
       'Before publishing:',
       '- Complete minimum-Windows, clean-environment and physical-HDR acceptance.',
-      '- Complete third-party corresponding-source delivery and license review.',
+      '- Verify all source assets and third-party notices against SOURCES-SHA256SUMS.txt.',
       '- Confirm unsigned-package notices, known limitations and release notes.',
       '',
       'Extract the entire ZIP. Complex SVG requires WebView2 Runtime.',
@@ -66,12 +75,13 @@ async function createDraft({ github, context, core }) {
     })).data;
   }
   const assets = await github.paginate(github.rest.repos.listReleaseAssets, { ...repo, release_id: release.id, per_page: 100 });
-  for (const name of [manifest.package, 'SHA256SUMS.txt', 'release.json']) {
+  const uploads = [manifest.package, 'SHA256SUMS.txt', 'release.json'].map(name => ({ name, file: path.join(directory, name) })).concat(sourceAssets);
+  for (const { name, file } of uploads) {
     const old = assets.find(asset => asset.name === name);
     if (old) await github.rest.repos.deleteReleaseAsset({ ...repo, asset_id: old.id });
     await github.rest.repos.uploadReleaseAsset({
       ...repo, release_id: release.id, name,
-      data: fs.readFileSync(path.join(directory, name)),
+      data: fs.readFileSync(file),
     });
   }
   core.notice('Draft ready: ' + release.html_url);
