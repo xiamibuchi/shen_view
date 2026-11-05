@@ -17,20 +17,23 @@ main 保存已交付基线，release/<major.minor.patch> 承接一个 Milestone 
 
 ## 合并门禁
 
-GitHub ruleset 对 main 与 release/* 强制 PR、PR checks 成功、目标分支最新、讨论已解决，
+GitHub ruleset 对 main 与 release/* 强制 PR、PR checks 与 PR policy 成功、目标分支最新、讨论已解决，
 禁止强推和删除；没有日常 bypass。个人维护暂不要求其他人批准，不等于允许跳过 CI。
 可使用更新分支按钮同步 base；不要依赖本地 hook 替代服务端规则。
 受保护分支规则模板位于 .github/rulesets/protected-branches.json；需由有权限的维护者应用到仓库，
-提交 JSON 本身不会自动启用规则。必需检查名必须与实际 Actions job 的 PR checks 一致。
+提交 JSON 本身不会自动启用规则。必需检查名必须与实际 Actions job 的 PR checks、PR policy 一致。
 
 规则启用前先运行首个 PR，确认检查名称和 runner 可用；将 GitHub Actions 设为该检查的预期提供方。
 不要求线性历史，因为版本 PR 使用 merge commit。版本分支不自动删除，工作分支合并后可手动清理。
 
 ## PR 检查与便携包
 
-Pull request checks 对 main、release/* 的 PR 执行，不对文档改动使用路径过滤：
+Pull request checks 对 main、release/* 的 PR 执行。工作流始终启动，内部仅允许
+README.md、docs/ 下普通 Markdown 说明跳过 Windows；混合改动、空差异和未识别路径完整执行。
+重命名同时检查旧、新路径，避免源文件移入 docs 后漏检。
 
 - PR policy 检查标题、目标版本和 Windows 可表示的版本范围。main 只接受同仓库的匹配版本分支。
+- PR policy 独立执行，修改标题或正文只重跑规则检查，不取消或重跑 Windows 构建。
 - Windows/macOS/Linux 验证提交检查工具及 PR 新增的普通提交。
 - Windows 构建先下载 LFS 样本，使用锁定 Flutter，生成本地化与许可排除表并检查漂移。
 - 检查本 PR 修改的 Dart 文件格式；custom_lint、analyze、Flutter 测试仍覆盖整个工程。
@@ -38,7 +41,8 @@ Pull request checks 对 main、release/* 的 PR 执行，不对文档改动使�
 - 完整测试前单独解码 Dolby Vision 样本；原生失败日志保留 Vulkan 与解码阶段错误。
 - 执行原生队列测试，生成 unsigned Windows x64 portable ZIP，解压后检查版本、哈希、
   许可、便携标记和空用户目录，并在仅系统 PATH 下运行随包解码样本。
-- PR checks 汇总，失败、取消或依赖跳过均不能合并。
+- PR checks 汇总，代码检查失败、取消或意外跳过均不能合并；仅允许计划明确批准的文档跳过。
+- 构建各阶段耗时写入 Actions 摘要和 artifacts/ci/windows-timings.jsonl。
 
 Windows runner 使用 windows-2025；Flutter 和 Actions 固定版本/提交，第三方构建输入按锁文件校验。
 MSYS2 安装前更新软件包数据库与基础工具；GCC、Mesa 和托管 runner 工具随供应方更新，
