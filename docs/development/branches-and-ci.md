@@ -53,7 +53,14 @@ MSYS2 安装前更新软件包数据库与基础工具；GCC、Mesa 和托管 ru
 构建前检查实例创建和设备枚举，结束后移除登记；不修改开发者本机注册表。
 这覆盖解码计算与取消/重建逻辑，真实显卡性能、HDR 显示及驱动兼容仍需实机验收。
 含非 ASCII 文本的 PowerShell 脚本使用 UTF-8 BOM，CI 另用 Windows PowerShell 5.1 解析检查。
-只缓存经过校验的下载文件，不跨 PR 复用本地 CMake/编译输出。缓存不是源码或发布渠道。
+下载缓存之外，复用 HDR/RAW/AVIF helper 及 FFmpeg 运行组件和 SDK。缓存键包括对应源码、
+依赖锁、补丁、构建脚本、编译器、CMake/SDK 和 runner 镜像版本；每次使用前校验文件清单、
+SHA256 与必要许可证，缺失或损坏则重建。不缓存 Flutter、CMake 和 FFmpeg 的中间对象目录。
+Windows 的 AVIF 与 HDR helper 统一使用 build/hdr-codecs，构建、测试和打包不再分别编译 AVIF。
+FFmpeg helper 源码变化仅重编 helper，底层库复用已校验的 SDK；依赖或工具链变化完整重建。
+Warm native dependencies 在 main/release 原生构建输入变化后预热分支缓存，也可手动执行。
+PR 缓存受 GitHub 分支作用域限制，不作为其他 PR 的公共依赖来源。损坏的远端缓存应在
+Actions 中删除；本次运行仍从源码重建。缓存不是源码或发布渠道。
 PR 代码在无发布密钥、contents: read 的托管 runner 执行，不使用 pull_request_target 构建 PR。
 fork 首次工作流可能需要 GitHub 的运行批准。
 

@@ -5,6 +5,7 @@
   [string]$SevenZip = '7z.exe'
 )
 . (Join-Path $PSScriptRoot '../paths.ps1')
+. (Join-Path $PSScriptRoot 'native_cache.ps1')
 $ErrorActionPreference = 'Stop'
 $recipe = Join-Path $RepositoryRoot 'third_party/ffmpeg'
 $work = Join-Path $NativeBuildRoot 'ffmpeg/windows-x64'
@@ -45,12 +46,11 @@ function Update-RuntimeNotices {
     Remove-Item -LiteralPath $absolute -Recurse -Force
   }
 }
-$identity = ((@('source.lock.json', 'windows-packages.lock.json', 'profile.sh', 'build-windows.sh', 'patches/libplacebo-lazy-vulkan.patch', 'patches/libplacebo-software-vulkan.patch') | ForEach-Object {
-  (Get-FileHash -LiteralPath (Join-Path $recipe $_) -Algorithm SHA256).Hash
-}) -join ':')
+$CompilerDirectory = Resolve-CompilerDirectory
+$identity = Get-FfmpegCacheKey $CompilerDirectory
 if (Test-Path -LiteralPath $manifestPath) {
   $existing = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-  $valid = $existing.identity -eq $identity
+  $valid = $existing.identity -eq $identity -and (Test-NativeCacheManifest $work $identity $FfmpegCacheDirectories $FfmpegCacheRequired)
   foreach ($file in $existing.files) {
     $path = Join-Path $runtime $file.name
     if (-not (Test-Path -LiteralPath $path) -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $file.sha256) { $valid = $false }
@@ -70,7 +70,9 @@ if (Test-Path -LiteralPath $manifestPath) {
       $existing.runtimeBytes = ($existing.files | Measure-Object bytes -Sum).Sum
       $existing | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
     }
-    Update-RuntimeNotices; Write-Host "FFmpeg 精简运行组件已校验：$runtime"; return
+    Update-RuntimeNotices
+    Write-NativeCacheManifest $work $identity $FfmpegCacheDirectories
+    Write-Host "FFmpeg 精简运行组件已校验：$runtime"; return
   }
 }
 $CompilerDirectory = Resolve-CompilerDirectory
@@ -78,6 +80,13 @@ if (-not $Bash) { $Bash = Resolve-ShenViewGitTool 'bin/bash.exe' } else { $Bash 
 $SevenZip = Resolve-ShenViewSevenZip $SevenZip
 foreach ($program in @($Bash, $SevenZip, (Join-Path $CompilerDirectory 'gcc.exe'), (Join-Path $CompilerDirectory 'objdump.exe'))) {
   if (-not (Test-Path -LiteralPath $program)) { throw "缺少 FFmpeg 构建工具：$program" }
+}
+# Compiler changes and incomplete restored SDKs must not reuse old object files.
+foreach ($name in @('build','install','sysroot')) {
+  $clean = [IO.Path]::GetFullPath((Join-Path $work $name))
+  $allowed = [IO.Path]::GetFullPath($work).TrimEnd('/','\') + [IO.Path]::DirectorySeparatorChar
+  if (-not $clean.StartsWith($allowed,[StringComparison]::OrdinalIgnoreCase)) { throw 'Invalid FFmpeg build cleanup path' }
+  if (Test-Path -LiteralPath $clean) { Remove-Item -LiteralPath $clean -Recurse -Force }
 }
 if (-not $DownloadCache) { $DownloadCache = Join-Path $NativeBuildRoot 'ffmpeg/downloads' }
 $DownloadCache = [IO.Path]::GetFullPath($DownloadCache)
@@ -169,4 +178,6 @@ if ($LASTEXITCODE -ne 0) { throw 'FFmpeg 运行组件启动失败' }
 $manifest = [ordered]@{ version = '9.0.2'; platform = 'windows-x64'; profile = 'playback'; identity = $identity; workerIdentity = $workerIdentity; files = @($files | Sort-Object name); runtimeBytes = ($files | Measure-Object bytes -Sum).Sum; versionOutput = @($version) }
 $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
 Update-RuntimeNotices
+Write-NativeCacheManifest $work $identity $FfmpegCacheDirectories
+if (-not (Test-NativeCacheManifest $work $identity $FfmpegCacheDirectories $FfmpegCacheRequired)) { throw 'FFmpeg cache verification failed after build' }
 Write-Host "FFmpeg 精简运行组件：$runtime"

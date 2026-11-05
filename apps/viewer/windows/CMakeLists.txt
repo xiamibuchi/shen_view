@@ -97,7 +97,7 @@ endif()
 
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
-include("${CMAKE_CURRENT_SOURCE_DIR}/../../../native/hdr_codecs/avif_windows.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/../../../native/hdr_codecs/windows.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/../../../native/ffmpeg/windows.cmake")
 install(PROGRAMS "${SHENVIEW_SVG_ROOT}/build/svg-codecs/bin/resvg.exe"
   DESTINATION "${CMAKE_INSTALL_PREFIX}/codecs" COMPONENT Runtime)

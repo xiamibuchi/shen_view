@@ -87,6 +87,33 @@ jobs:
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/powershell_compatibility.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Test native cache validation
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tool/check/native_cache_test.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Identify native build inputs
+        id: native-keys
+        run: ./tool/ci/native-cache.ps1 -Action Keys
+      - name: Restore HDR helpers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: ${{ steps.native-keys.outputs.hdr }}
+          path: |
+            build/hdr-codecs/bin
+            build/hdr-codecs/licenses
+            build/hdr-codecs/cache-manifest.json
+      - name: Restore FFmpeg runtime and SDK
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: ${{ steps.native-keys.outputs.ffmpeg }}
+          path: |
+            build/ffmpeg/windows-x64/runtime
+            build/ffmpeg/windows-x64/install/include
+            build/ffmpeg/windows-x64/install/lib
+            build/ffmpeg/windows-x64/install/bin
+            build/ffmpeg/windows-x64/sysroot/mingw64/include
+            build/ffmpeg/windows-x64/sysroot/mingw64/lib
+            build/ffmpeg/windows-x64/cache-manifest.json
       - name: Check, build and verify portable
         env:
           CI_BASE_SHA: ${{ inputs.base-sha }}
