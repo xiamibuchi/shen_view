@@ -2,9 +2,21 @@ param([switch]$Probe,[string]$ProbeRoot)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '../build/native_cache.ps1')
 if ($Probe) { Get-NativeInputKey $ProbeRoot @('bin','licenses') 'compiler-1'; return }
+. (Join-Path $PSScriptRoot '../paths.ps1')
 $root = Join-Path ([IO.Path]::GetTempPath()) ('shenview-cache-test-' + [guid]::NewGuid().ToString('N'))
 function Assert([bool]$Condition) { if (-not $Condition) { throw 'Native cache assertion failed' } }
 try {
+  $originalImage = $env:ImageVersion
+  try {
+    $cmake = Resolve-ShenViewCMake
+    $generator = Resolve-ShenViewVisualStudioGenerator
+    $env:ImageVersion = 'image-a'
+    $hdrKey = Get-HdrCacheKey $cmake $generator 'x64'
+    $ciKey = Get-NativeCiCacheKey 'hdr' $hdrKey
+    $env:ImageVersion = 'image-b'
+    Assert ($hdrKey -ceq (Get-HdrCacheKey $cmake $generator 'x64'))
+    Assert ($ciKey -cne (Get-NativeCiCacheKey 'hdr' $hdrKey))
+  } finally { $env:ImageVersion = $originalImage }
   New-Item -ItemType Directory -Path (Join-Path $root 'bin'),(Join-Path $root 'licenses') -Force | Out-Null
   [IO.File]::WriteAllText((Join-Path $root 'bin/codec.exe'), 'test binary')
   [IO.File]::WriteAllText((Join-Path $root 'licenses/LICENSE'), 'test license')

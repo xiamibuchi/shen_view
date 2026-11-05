@@ -62,6 +62,8 @@ MSYS2 安装前更新软件包数据库与基础工具；GCC、Mesa 和托管 ru
 下载缓存之外，复用 HDR/RAW/AVIF helper 及 FFmpeg 运行组件和 SDK。缓存键包括对应源码、
 依赖锁、补丁、构建脚本、编译器、CMake/SDK 和 runner 镜像版本；每次使用前校验文件清单、
 SHA256 与必要许可证，缺失或损坏则重建。不缓存 Flutter、CMake 和 FFmpeg 的中间对象目录。
+runner 镜像版本用于隔离 Actions 缓存；跨 job 的产物身份由实际源码、配置及工具链决定。
+同一次运行可能分配不同镜像版本，不能仅因镜像编号不同拒绝工具链一致的产物。
 构建及完整性校验成功后即保存原生和下载缓存，后续测试失败仍会拦截合并，但不会丢弃已验证的构建缓存。
 FFmpeg 下载设单次 90 秒超时、最多三次尝试；临时文件通过 SHA256 校验后才移入下载缓存。
 Windows 的 AVIF 与 HDR helper 统一使用 build/hdr-codecs，构建、测试和打包不再分别编译 AVIF。

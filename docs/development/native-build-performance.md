@@ -36,6 +36,8 @@ helper 改动直接进入 CMake 构建，不主动重新配置。CMake 自行维
 并上传当前运行的 helper / SDK artifact。Windows 应用 job 下载并再次校验这些文件后，
 继续执行 Release 构建、完整 Flutter 测试、原生烟测和便携包验包。
 预热工作流复用相同的两个 job，但不上传供应用构建使用的 artifact。
+缓存键另含 runner 镜像版本，用于隔离缓存；产物身份保留实际编译器哈希、CMake、SDK、
+架构及源码配置约束，不要求两个 job 的镜像编号相同。
 
 拆分 job 减少串行等待，不减少编译总工作量；需计入额外 runner 初始化及 artifact 传输。
 原生 job 的构建耗时保留在 Actions 摘要和各自诊断 artifact 的 `native-timings.jsonl`。

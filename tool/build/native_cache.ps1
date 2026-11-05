@@ -17,6 +17,11 @@ function Get-NativeInputKey([string]$Root, [string[]]$Inputs, [string]$Toolchain
   finally { $hash.Dispose() }
 }
 
+function Get-NativeCiCacheKey([string]$Component, [string]$InputKey) {
+  $image = if ($env:ImageVersion) { $env:ImageVersion } else { 'local' }
+  return "windows-x64-$Component-v2-$image-$InputKey"
+}
+
 function Get-NativeCacheFiles([string]$Root, [string[]]$Directories) {
   foreach ($directory in $Directories) {
     Get-ChildItem -LiteralPath (Join-Path $Root $directory) -File -Recurse -ErrorAction Stop |
@@ -68,7 +73,7 @@ function Get-HdrDependencyKey([string]$CMake, [string]$Generator, [string]$Archi
     Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
   $cmakeVersion = & $CMake --version
   if ($LASTEXITCODE) { throw 'Cannot identify CMake' }
-  $toolchain = @($Architecture,$Generator,$cmakeVersion[0],(Get-FileHash $cl -Algorithm SHA256).Hash,$sdk.Name,$env:ImageVersion) -join ':'
+  $toolchain = @($Architecture,$Generator,$cmakeVersion[0],(Get-FileHash $cl -Algorithm SHA256).Hash,$sdk.Name) -join ':'
   Get-NativeInputKey $RepositoryRoot @('native/hdr_codecs/CMakeLists.txt','third_party/cmake','third_party/dependencies.lock.json',
     'tool/build/build_hdr_codecs.ps1','tool/build/native_cache.ps1','tool/toolchain.ps1','tool/paths.ps1') $toolchain
 }
@@ -84,7 +89,7 @@ function Get-FfmpegCacheKey([string]$CompilerDirectory) {
   if ($LASTEXITCODE) { throw 'Cannot identify GCC version' }
   $target = & $compiler -dumpmachine
   if ($LASTEXITCODE) { throw 'Cannot identify GCC target' }
-  $toolchain = @($version,$target,(Get-FileHash $compiler -Algorithm SHA256).Hash,$env:ImageVersion) -join ':'
+  $toolchain = @($version,$target,(Get-FileHash $compiler -Algorithm SHA256).Hash) -join ':'
   Get-NativeInputKey $RepositoryRoot @('third_party/ffmpeg','tool/build/build_ffmpeg.ps1',
     'tool/build/native_cache.ps1','tool/toolchain.ps1','tool/paths.ps1') $toolchain
 }

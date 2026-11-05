@@ -27,8 +27,13 @@ foreach ($name in @('Hdr','Ffmpeg')) {
   if ($Action -eq 'Keys') {
     if (-not $env:GITHUB_OUTPUT) { throw 'GITHUB_OUTPUT is required for cache keys' }
     $label = $name.ToLowerInvariant()
-    "$label=windows-x64-$label-v1-$key" | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding UTF8
+    "$label=$(Get-NativeCiCacheKey $label $key)" | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding UTF8
   } elseif (-not (Test-NativeCacheManifest $root $key $directories $required)) {
+    Write-Host "Expected $name build identity: $key (runner image $env:ImageVersion)"
+    if (Test-Path -LiteralPath (Join-Path $root 'cache-manifest.json')) {
+      $manifest = try { Get-Content -LiteralPath (Join-Path $root 'cache-manifest.json') -Raw | ConvertFrom-Json } catch { $null }
+      Write-Host "Transferred $name build identity: $($manifest.key)"
+    }
     throw "Invalid $name artifact: missing files, mismatched inputs or corrupt outputs"
   } else {
     Write-Host "$name artifact matches the current source, toolchain and file hashes."
