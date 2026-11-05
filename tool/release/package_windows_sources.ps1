@@ -79,6 +79,9 @@ if (Test-Path -LiteralPath $noticePath) { Remove-Item -LiteralPath $noticePath -
 $records += [ordered]@{id='notices';name=$noticeName;sha256=(Get-FileHash -LiteralPath $noticePath -Algorithm SHA256).Hash.ToLowerInvariant();bytes=(Get-Item -LiteralPath $noticePath).Length}
 $delivery = [ordered]@{schema=1;sourceCommit=$commit;sourceDirty=$false;package=$manifest.package;packageSha256=$packageHash;
   sourceLockSha256=(Get-ReleaseSourceTextHash $lockPath);assets=$records;notices=$noticeRecords}
+if ((& git -C $RepositoryRoot rev-parse HEAD) -cne $commit -or @(& git -C $RepositoryRoot status --porcelain --untracked-files=normal).Count) {
+  throw 'Source changed while collecting release materials'
+}
 $utf8 = New-Object Text.UTF8Encoding($false)
 [IO.File]::WriteAllText((Join-Path $OutputDirectory 'SOURCES.json'),($delivery | ConvertTo-Json -Depth 8),$utf8)
 Copy-Item -LiteralPath (Join-Path $RepositoryRoot 'docs/release/source-delivery.md') -Destination (Join-Path $OutputDirectory 'SOURCES.md') -Force

@@ -18,10 +18,13 @@ $duplicate = $lock.assets[0].id
 $lock.assets[0].id = '7zip'
 Reject { Get-ReleaseSourceAssets $lock $dependencies $sdk }
 $lock.assets[0].id = $duplicate
-$manifest = [pscustomobject]@{sourceDirty=$false;sourceCommit='commit';installerType='portable';package='ShenView-0.1.0.1-windows-x64-portable.zip'}
+$manifest = [pscustomobject]@{sourceDirty=$false;sourceCommit='commit';installerType='portable';windowsVersion='0.1.0.1';package='ShenView-0.1.0.1-windows-x64-portable.zip'}
 Assert-ReleaseSourceInput $manifest 'commit' $false $manifest.package
 Reject { Assert-ReleaseSourceInput $manifest 'another' $false $manifest.package }
 Reject { Assert-ReleaseSourceInput $manifest 'commit' $true $manifest.package }
+$manifest.windowsVersion = '../another'
+Reject { Assert-ReleaseSourceInput $manifest 'commit' $false $manifest.package }
+$manifest.windowsVersion = '0.1.0.1'
 $manifest.sourceDirty = $true
 Reject { Assert-ReleaseSourceInput $manifest 'commit' $false $manifest.package }
 $manifest.sourceDirty = $false

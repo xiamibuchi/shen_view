@@ -67,6 +67,7 @@ function Assert-ReleaseSourceInput {
   if ($Dirty -or $Manifest.sourceDirty -ne $false -or $Manifest.sourceCommit -cne $Commit -or $Manifest.installerType -cne 'portable') {
     throw 'Source delivery requires a clean portable package of the current commit'
   }
-  if ($Manifest.package -cnotmatch '^ShenView-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-windows-x64-portable\.zip$' -or
+  if ($Manifest.windowsVersion -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' -or
+      $Manifest.package -cne "ShenView-$($Manifest.windowsVersion)-windows-x64-portable.zip" -or
       [IO.Path]::GetFileName($PackagePath) -cne $Manifest.package) { throw 'Invalid portable package name' }
 }

@@ -35,9 +35,12 @@ SOURCES.json 将源码资料绑定到应用 ZIP 的 SHA256 和源码提交，并
 不在此处承诺字节级可重复构建。
 
 ImageMagick 的 Windows 源码归档包含上游各仓库的完整检出及构建配置，不能只取通用 Unix 源码包代替。
-本版 Configure 工程使用 VS 2026 / v145；可在 VS 开发者命令提示符先构建 Configure/Configure.sln，
-然后从归档根目录运行生成的 Configure.Release.x64.exe，按上游发行参数选择 /VS2026 /installedSupport
-/deprecated /hdri /Q16 /x64 /dynamic，最后构建生成的解决方案。需要从源码修改或重链接委托库时，
+二进制使用的 Dependencies 为 2026.10.13.2113（d38cb0f91e91357c3b299087f17a6b27cc05d056），
+归档检出与该 tag 一致。Configure 二进制来自 2026.09.21.1729；归档包含 Git 历史，
+重建这个工具前先在 Configure 目录执行 git checkout --detach 2026.09.21.1729，使用对应源码而非较新的默认检出。
+本版发行使用 VS 2026 / v145；可在 VS 开发者命令提示符构建 Configure/Configure.sln，
+然后按上游发行脚本的 Configure 工作目录和参数 /VS2026 /installedSupport /deprecated /hdri /Q16 /x64 /dynamic
+生成并构建解决方案。需要从源码修改或重链接委托库时，
 使用归档内 Dependencies 的源码与 Configure 项目，不要用 download-dependencies 脚本重新覆盖成预编译依赖。
 完整配置逻辑及上游构建命令保留在 Configure/src/ 和 ImageMagick/.github/workflows/release.yml 中。
 此处交付上游构建资料；本项目未另行验收完整 ImageMagick 源码的重建结果。
