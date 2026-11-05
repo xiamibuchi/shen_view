@@ -48,9 +48,12 @@ function Update-RuntimeNotices {
 }
 $CompilerDirectory = Resolve-CompilerDirectory
 $identity = Get-FfmpegCacheKey $CompilerDirectory
-if (Test-Path -LiteralPath $manifestPath) {
-  $existing = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-  $valid = $existing.identity -eq $identity -and (Test-NativeCacheManifest $work $identity $FfmpegCacheDirectories $FfmpegCacheRequired)
+$existing = $null
+if (Test-NativeCacheManifest $work $identity $FfmpegCacheDirectories $FfmpegCacheRequired) {
+  try { $existing = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $existing = $null }
+}
+if ($existing) {
+  $valid = $existing.identity -eq $identity
   foreach ($file in $existing.files) {
     $path = Join-Path $runtime $file.name
     if (-not (Test-Path -LiteralPath $path) -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $file.sha256) { $valid = $false }

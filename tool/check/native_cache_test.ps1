@@ -19,6 +19,8 @@ try {
   Assert ($key -eq (Get-NativeInputKey $root $dirs 'compiler-1'))
   Assert ($key -ne (Get-NativeInputKey $root $dirs 'compiler-2'))
   Assert (-not (Test-NativeCacheManifest $root $key $dirs $required))
+  [IO.File]::WriteAllText((Join-Path $root 'cache-manifest.json'), '{invalid')
+  Assert (-not (Test-NativeCacheManifest $root $key $dirs $required))
   Write-NativeCacheManifest $root $key $dirs
   Assert (Test-NativeCacheManifest $root $key $dirs $required)
   Assert (-not (Test-NativeCacheManifest $root 'different-key' $dirs $required))
