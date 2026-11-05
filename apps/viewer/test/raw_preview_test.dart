@@ -12,6 +12,7 @@ import 'package:shen_view/src/application/decode_scheduler.dart';
 import 'package:shen_view/src/application/image_resource_service.dart';
 import 'package:shen_view/src/application/metadata_service.dart';
 import 'package:shen_view/src/application/native_decoder.dart';
+import 'package:shen_view/src/application/prefetch_policy.dart';
 import 'package:shen_view/src/application/raw_developer.dart';
 import 'package:shen_view/src/domain/image_entry.dart';
 import 'package:shen_view/src/domain/image_format.dart';
@@ -177,6 +178,60 @@ void main() {
       },
     );
   }
+
+  test(
+    'main RAW waits for sensor-development capacity on a 4 GiB host',
+    () async {
+      final decoder = _Decoder()..gate = Completer<void>();
+      final scheduler = DecodeScheduler();
+      final service = ImageResourceService(
+        decoder: decoder,
+        metadataService: _Metadata(),
+        scheduler: scheduler,
+        prefetchPolicy: AdaptivePrefetchPolicy(
+          physicalMemoryBytes: 4 * 1024 * 1024 * 1024,
+          availableMemoryBytes: 3 * 1024 * 1024 * 1024,
+        ),
+      );
+      addTearDown(service.dispose);
+      final firstEntry = entry();
+      final secondEntry = firstEntry.withFile(
+        File('testdata/formats/raw_sony_a7s.arw'),
+      );
+      service.applyWorkingSet(
+        protectedIds: {firstEntry.id, secondEntry.id},
+        retainedIds: {firstEntry.id, secondEntry.id},
+      );
+      final first = load(
+        service.provider(firstEntry, targetWidth: 600, targetHeight: 400),
+      );
+      await decoder.started.future;
+      Object? secondError;
+      final second =
+          load(
+            service.provider(secondEntry, targetWidth: 600, targetHeight: 400),
+          ).then<ui.Image?>(
+            (image) => image,
+            onError: (Object error) {
+              secondError = error;
+              return null;
+            },
+          );
+      try {
+        await pumpEventQueue();
+        expect(secondError, isNull);
+        expect(scheduler.queuedCount, 1);
+        expect(service.inflightBytes, greaterThan(32 * 1024 * 1024));
+      } finally {
+        decoder.gate!.complete();
+        (await first).dispose();
+        (await second)?.dispose();
+      }
+      expect(secondError, isNull);
+      expect(decoder.developments, 2);
+      expect(service.inflightBytes, 0);
+    },
+  );
 
   test(
     'a small thumbnail cannot satisfy the same-size main cache key',
