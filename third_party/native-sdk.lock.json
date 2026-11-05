@@ -2,7 +2,7 @@
   "schema": 1,
   "version": "1.0.1",
   "platform": "windows-x64",
-  "recipeSha256": "46b384aa6c65ee9a1d10feefa39ada0f3503482deea59babae6efe56fe5472c6",
+  "recipeSha256": "5ccba4f0dc9c1a7b185ce32a4c515bbdf5d512f1085d4567ed7b7afa39d44f7a",
   "components": {
     "hdr": {
       "asset": "shenview-hdr-sdk-windows-x64.zip",

@@ -16,7 +16,7 @@ permissions:
 jobs:
   native:
     name: Dependency SDK (${{ matrix.component }})
-    runs-on: windows-2025
+    runs-on: windows-2022
     timeout-minutes: 45
     strategy:
       fail-fast: false
