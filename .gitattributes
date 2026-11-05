@@ -7,6 +7,12 @@ apps/viewer/windows/flutter/generated_* text eol=lf
 .githooks/* text eol=lf
 .github/workflows/* text eol=lf
 third_party/ffmpeg/licenses/** text eol=lf
+third_party/native-sdk/** text eol=lf
+third_party/native-sdk.lock.json text eol=lf
+native/hdr_codecs/CMakeLists.txt text eol=lf
+tool/build/*sdk*.ps1 text eol=lf
+tool/build/ffmpeg_dependencies.ps1 text eol=lf
+tool/build/build_ffmpeg.ps1 text eol=lf
 
 *.png binary
 *.jpg binary

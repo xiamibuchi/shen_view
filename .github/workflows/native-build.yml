@@ -1,4 +1,4 @@
-name: Native Windows dependencies
+name: Build Windows dependency SDK
 
 on:
   workflow_call:
@@ -9,16 +9,13 @@ on:
       artifact-prefix:
         type: string
         required: true
-      upload-artifacts:
-        type: boolean
-        default: true
 
 permissions:
   contents: read
 
 jobs:
   native:
-    name: Native dependencies (${{ matrix.component }})
+    name: Dependency SDK (${{ matrix.component }})
     runs-on: windows-2025
     timeout-minutes: 45
     strategy:
@@ -28,6 +25,8 @@ jobs:
     defaults:
       run:
         shell: pwsh
+    env:
+      SHENVIEW_NATIVE_BUILD_MODE: Source
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -45,95 +44,45 @@ jobs:
         env:
           MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
         run: Add-Content $env:GITHUB_PATH (Join-Path $env:MSYS_LOCATION 'mingw64/bin')
-      - name: Identify native build inputs
-        id: native-keys
-        run: ./tool/ci/native-cache.ps1 -Action Keys -Component '${{ matrix.component }}'
-      - name: Restore HDR helpers
-        if: matrix.component == 'hdr'
-        id: hdr-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          key: ${{ steps.native-keys.outputs.hdr }}
-          path: |
-            build/hdr-codecs/bin
-            build/hdr-codecs/licenses
-            build/hdr-codecs/cache-manifest.json
-      - name: Restore FFmpeg runtime and SDK
-        if: matrix.component == 'ffmpeg'
-        id: ffmpeg-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          key: ${{ steps.native-keys.outputs.ffmpeg }}
-          path: |
-            build/ffmpeg/windows-x64/runtime
-            build/ffmpeg/windows-x64/install/include
-            build/ffmpeg/windows-x64/install/lib
-            build/ffmpeg/windows-x64/install/bin
-            build/ffmpeg/windows-x64/sysroot/mingw64/include
-            build/ffmpeg/windows-x64/sysroot/mingw64/lib
-            build/ffmpeg/windows-x64/cache-manifest.json
-      - name: Build and verify native component
+      - name: Build dependencies, package SDK and relink current helper
+        id: sdk
         env:
           NATIVE_COMPONENT: ${{ matrix.component }}
         run: |
           $log = Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci'
+          $lock = Get-Content third_party/native-sdk.lock.json -Raw | ConvertFrom-Json
+          "version=$($lock.version)" | Add-Content -LiteralPath $env:GITHUB_OUTPUT
           New-Item -ItemType Directory -Force $log | Out-Null
           . ./tool/ci/timing.ps1
           $CiTimingPath = Join-Path $log 'native-timings.jsonl'
-          Measure-CiStage "Native $env:NATIVE_COMPONENT" {
-            & ./tool/ci/native-cache.ps1 -Action Build -Component $env:NATIVE_COMPONENT *>&1 | Tee-Object -FilePath (Join-Path $log 'build.log')
-            & ./tool/ci/native-cache.ps1 -Action Verify -Component $env:NATIVE_COMPONENT
+          Measure-CiStage "Source SDK $env:NATIVE_COMPONENT" {
+            & ./tool/ci/native-cache.ps1 -Action Build -Component $env:NATIVE_COMPONENT *>&1 | Tee-Object -FilePath (Join-Path $log 'source-build.log')
+            & ./tool/build/package_native_sdk.ps1 -Component $env:NATIVE_COMPONENT
           }
-      - name: Save verified HDR helpers
-        if: matrix.component == 'hdr' && steps.hdr-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          key: ${{ steps.native-keys.outputs.hdr }}
-          path: |
-            build/hdr-codecs/bin
-            build/hdr-codecs/licenses
-            build/hdr-codecs/cache-manifest.json
-      - name: Save verified FFmpeg runtime and SDK
-        if: matrix.component == 'ffmpeg' && steps.ffmpeg-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          key: ${{ steps.native-keys.outputs.ffmpeg }}
-          path: |
-            build/ffmpeg/windows-x64/runtime
-            build/ffmpeg/windows-x64/install/include
-            build/ffmpeg/windows-x64/install/lib
-            build/ffmpeg/windows-x64/install/bin
-            build/ffmpeg/windows-x64/sysroot/mingw64/include
-            build/ffmpeg/windows-x64/sysroot/mingw64/lib
-            build/ffmpeg/windows-x64/cache-manifest.json
-      - name: Upload HDR helpers
-        if: inputs.upload-artifacts && matrix.component == 'hdr'
+          $lock = Get-Content third_party/native-sdk.lock.json -Raw | ConvertFrom-Json
+          $env:SHENVIEW_NATIVE_SDK_ROOT = Join-Path $env:GITHUB_WORKSPACE "artifacts/native-sdk/$($lock.version)"
+          $env:SHENVIEW_NATIVE_BUILD_MODE = 'Sdk'
+          Measure-CiStage "SDK relink $env:NATIVE_COMPONENT" {
+            & ./tool/ci/native-cache.ps1 -Action Build -Component $env:NATIVE_COMPONENT *>&1 | Tee-Object -FilePath (Join-Path $log 'sdk-relink.log')
+          }
+      - name: Upload candidate SDK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: ${{ inputs.artifact-prefix }}-hdr
+          name: ${{ inputs.artifact-prefix }}-${{ matrix.component }}
           path: |
-            build/hdr-codecs/bin
-            build/hdr-codecs/licenses
-            build/hdr-codecs/cache-manifest.json
+            artifacts/native-sdk/${{ steps.sdk.outputs.version }}/shenview-${{ matrix.component }}-sdk-windows-x64.zip
+            artifacts/native-sdk/${{ steps.sdk.outputs.version }}/${{ matrix.component }}-SHA256SUMS.txt
           if-no-files-found: error
-          overwrite: true
-          retention-days: 1
-      - name: Upload FFmpeg runtime and SDK
-        if: inputs.upload-artifacts && matrix.component == 'ffmpeg'
+          retention-days: 7
+      - name: Upload corresponding sources
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: ${{ inputs.artifact-prefix }}-ffmpeg
+          name: ${{ inputs.artifact-prefix }}-${{ matrix.component }}-sources
           path: |
-            build/ffmpeg/windows-x64/runtime
-            build/ffmpeg/windows-x64/install/include
-            build/ffmpeg/windows-x64/install/lib
-            build/ffmpeg/windows-x64/install/bin
-            build/ffmpeg/windows-x64/sysroot/mingw64/include
-            build/ffmpeg/windows-x64/sysroot/mingw64/lib
-            build/ffmpeg/windows-x64/cache-manifest.json
+            artifacts/native-sdk/${{ steps.sdk.outputs.version }}/shenview-${{ matrix.component }}-sources-windows-x64.zip
+            artifacts/native-sdk/${{ steps.sdk.outputs.version }}/${{ matrix.component }}-sources-SHA256SUMS.txt
           if-no-files-found: error
-          overwrite: true
-          retention-days: 1
+          retention-days: 7
       - name: Upload native diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -141,5 +90,4 @@ jobs:
           name: ${{ inputs.artifact-prefix }}-${{ matrix.component }}-diagnostics
           path: artifacts/ci
           if-no-files-found: warn
-          overwrite: true
           retention-days: 14

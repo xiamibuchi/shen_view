@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot "native_sdk.ps1")
+
 function Get-NativeInputKey([string]$Root, [string[]]$Inputs, [string]$Toolchain) {
   $records = @($Toolchain)
   foreach ($inputPath in $Inputs) {
@@ -74,8 +76,11 @@ function Get-HdrDependencyKey([string]$CMake, [string]$Generator, [string]$Archi
   $cmakeVersion = & $CMake --version
   if ($LASTEXITCODE) { throw 'Cannot identify CMake' }
   $toolchain = @($Architecture,$Generator,$cmakeVersion[0],(Get-FileHash $cl -Algorithm SHA256).Hash,$sdk.Name) -join ':'
+  if ($env:SHENVIEW_HDR_SDK) {
+    $toolchain += ":sdk:" + (Get-FileHash -LiteralPath (Join-Path $env:SHENVIEW_HDR_SDK "sdk-manifest.json") -Algorithm SHA256).Hash
+  }
   Get-NativeInputKey $RepositoryRoot @('native/hdr_codecs/CMakeLists.txt','third_party/cmake','third_party/dependencies.lock.json',
-    'tool/build/build_hdr_codecs.ps1','tool/build/native_cache.ps1','tool/toolchain.ps1','tool/paths.ps1') $toolchain
+    'third_party/native-sdk','tool/build/build_hdr_codecs.ps1','tool/build/native_cache.ps1','tool/toolchain.ps1','tool/paths.ps1') $toolchain
 }
 
 function Get-HdrCacheKey([string]$CMake, [string]$Generator, [string]$Architecture) {
@@ -90,8 +95,11 @@ function Get-FfmpegCacheKey([string]$CompilerDirectory) {
   $target = & $compiler -dumpmachine
   if ($LASTEXITCODE) { throw 'Cannot identify GCC target' }
   $toolchain = @($version,$target,(Get-FileHash $compiler -Algorithm SHA256).Hash) -join ':'
+  if ($env:SHENVIEW_FFMPEG_SDK) {
+    $toolchain += ":sdk:" + (Get-FileHash -LiteralPath (Join-Path $env:SHENVIEW_FFMPEG_SDK "sdk-manifest.json") -Algorithm SHA256).Hash
+  }
   Get-NativeInputKey $RepositoryRoot @('third_party/ffmpeg','tool/build/build_ffmpeg.ps1',
-    'tool/build/native_cache.ps1','tool/toolchain.ps1','tool/paths.ps1') $toolchain
+    'tool/build/ffmpeg_dependencies.ps1','tool/build/native_cache.ps1','tool/toolchain.ps1','tool/paths.ps1') $toolchain
 }
 
 $FfmpegCacheDirectories = @('runtime','install/include','install/lib','install/bin',

@@ -2,13 +2,15 @@
   [string]$DownloadCache = '',
   [string]$CompilerDirectory = '',
   [string]$Bash = '',
-  [string]$SevenZip = '7z.exe'
+  [string]$SevenZip = '7z.exe',
+  [ValidateSet('Auto','Sdk','Source')][string]$DependencyMode = 'Auto'
 )
 . (Join-Path $PSScriptRoot '../paths.ps1')
 . (Join-Path $PSScriptRoot 'native_cache.ps1')
 $ErrorActionPreference = 'Stop'
 $recipe = Join-Path $RepositoryRoot 'third_party/ffmpeg'
 . (Join-Path $recipe 'download.ps1')
+$source = Get-Content -LiteralPath (Join-Path $recipe 'source.lock.json') -Raw | ConvertFrom-Json
 $work = Join-Path $NativeBuildRoot 'ffmpeg/windows-x64'
 $runtime = Join-Path $work 'runtime'
 $manifestPath = Join-Path $runtime 'manifest.json'
@@ -47,6 +49,16 @@ function Update-RuntimeNotices {
     Remove-Item -LiteralPath $absolute -Recurse -Force
   }
 }
+function Get-WorkerImports([string]$Binary) {
+  $imports = @(& (Join-Path $CompilerDirectory 'objdump.exe') -p $Binary | Select-String -SimpleMatch 'DLL Name:' | ForEach-Object { $_.Line.Split(':')[-1].Trim().ToLowerInvariant() })
+  if ($LASTEXITCODE) { throw 'Cannot inspect HDR helper imports' }
+  foreach ($import in $imports) {
+    if (-not (Test-Path -LiteralPath (Join-Path $runtime $import)) -and -not (Test-Path -LiteralPath (Join-Path $env:WINDIR "System32/$import")) -and
+        -not $import.StartsWith('api-ms-win-') -and -not $import.StartsWith('ext-ms-win-')) { throw "HDR helper missing dependency: $import" }
+  }
+  return $imports
+}
+$sdk = Resolve-NativeSdkComponent 'ffmpeg' $DependencyMode
 $CompilerDirectory = Resolve-CompilerDirectory
 $identity = Get-FfmpegCacheKey $CompilerDirectory
 $existing = $null
@@ -63,10 +75,7 @@ if ($existing) {
     if ($existing.workerIdentity -ne $workerIdentity -or -not (Test-Path -LiteralPath (Join-Path $runtime 'viewer_hdr_video.exe'))) {
       $binary = Build-HdrWorker
       Copy-Item -LiteralPath $binary -Destination $runtime -Force
-      $imports = @(& (Join-Path $CompilerDirectory 'objdump.exe') -p $binary | Select-String -SimpleMatch 'DLL Name:' | ForEach-Object { $_.Line.Split(':')[-1].Trim().ToLowerInvariant() })
-      foreach ($import in $imports) {
-        if (-not (Test-Path -LiteralPath (Join-Path $runtime $import)) -and -not (Test-Path -LiteralPath (Join-Path $env:WINDIR "System32/$import")) -and -not $import.StartsWith('api-ms-win-')) { throw "HDR helper 缺少依赖：$import" }
-      }
+      $imports = @(Get-WorkerImports $binary)
       $existing.files = @($existing.files | Where-Object { $_.name -ne 'viewer_hdr_video.exe' }) + @([pscustomobject]@{
         name = 'viewer_hdr_video.exe'; bytes = (Get-Item -LiteralPath $binary).Length; sha256 = (Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash; imports = $imports
       })
@@ -79,54 +88,16 @@ if ($existing) {
     Write-Host "FFmpeg 精简运行组件已校验：$runtime"; return
   }
 }
-$CompilerDirectory = Resolve-CompilerDirectory
-if (-not $Bash) { $Bash = Resolve-ShenViewGitTool 'bin/bash.exe' } else { $Bash = Resolve-ShenViewTool $Bash }
-$SevenZip = Resolve-ShenViewSevenZip $SevenZip
-foreach ($program in @($Bash, $SevenZip, (Join-Path $CompilerDirectory 'gcc.exe'), (Join-Path $CompilerDirectory 'objdump.exe'))) {
-  if (-not (Test-Path -LiteralPath $program)) { throw "缺少 FFmpeg 构建工具：$program" }
-}
-# Compiler changes and incomplete restored SDKs must not reuse old object files.
-foreach ($name in @('build','install','sysroot')) {
-  $clean = [IO.Path]::GetFullPath((Join-Path $work $name))
-  $allowed = [IO.Path]::GetFullPath($work).TrimEnd('/','\') + [IO.Path]::DirectorySeparatorChar
-  if (-not $clean.StartsWith($allowed,[StringComparison]::OrdinalIgnoreCase)) { throw 'Invalid FFmpeg build cleanup path' }
-  if (Test-Path -LiteralPath $clean) { Remove-Item -LiteralPath $clean -Recurse -Force }
-}
-if (-not $DownloadCache) { $DownloadCache = Join-Path $NativeBuildRoot 'ffmpeg/downloads' }
-$DownloadCache = [IO.Path]::GetFullPath($DownloadCache)
-[IO.Directory]::CreateDirectory($DownloadCache) | Out-Null
-[IO.Directory]::CreateDirectory($work) | Out-Null
-function Acquire($item) {
-  $file = Join-Path $DownloadCache ([IO.Path]::GetFileName($item.url))
-  Get-VerifiedFfmpegDownload -Uri $item.url -Sha256 $item.sha256 -Destination $file
-}
-function Extract([string]$Archive, [string]$Destination) {
-  & $SevenZip x $Archive "-o$Destination" -y -bso0 -bsp0
-  if ($LASTEXITCODE -ne 0) { throw "解压失败：$Archive" }
-}
-$source = Get-Content (Join-Path $recipe 'source.lock.json') -Raw | ConvertFrom-Json
-$sourceArchive = Acquire $source
-Extract $sourceArchive $DownloadCache
-$sources = Join-Path $NativeBuildRoot 'ffmpeg/source'
-Extract (Join-Path $DownloadCache ([IO.Path]::GetFileNameWithoutExtension($sourceArchive))) $sources
-$sourceDirectory = Join-Path $sources 'ffmpeg-9.0.2'
-$packages = Get-Content (Join-Path $recipe 'windows-packages.lock.json') -Raw | ConvertFrom-Json
-foreach ($package in $packages) {
-  $archive = Acquire $package
-  Extract $archive $DownloadCache
-  Extract (Join-Path $DownloadCache ([IO.Path]::GetFileNameWithoutExtension($archive))) (Join-Path $work 'sysroot')
-}
-$variableNames = @('SHENVIEW_FFMPEG_BUILD_ROOT', 'SHENVIEW_FFMPEG_SOURCE', 'SHENVIEW_FFMPEG_COMPILER')
-$saved = @{}
-foreach ($name in $variableNames) { $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
-try {
-  $env:SHENVIEW_FFMPEG_BUILD_ROOT = $work.Replace([char]92, [char]47)
-  $env:SHENVIEW_FFMPEG_SOURCE = $sourceDirectory.Replace([char]92, [char]47)
-  $env:SHENVIEW_FFMPEG_COMPILER = ([IO.Path]::GetFullPath($CompilerDirectory)).Replace([char]92, [char]47)
-  & $Bash (Join-Path $recipe 'build-windows.sh').Replace([char]92, [char]47)
-  if ($LASTEXITCODE -ne 0) { throw "FFmpeg 编译失败：$LASTEXITCODE" }
-} finally {
-  foreach ($name in $variableNames) { [Environment]::SetEnvironmentVariable($name, $saved[$name], 'Process') }
+if (-not $sdk) {
+  $sourceDirectory = Join-Path $NativeBuildRoot 'ffmpeg/source/ffmpeg-9.0.2'
+  . (Join-Path $PSScriptRoot 'ffmpeg_dependencies.ps1')
+  Build-FfmpegDependencies
+} else {
+  foreach ($directory in @('install','sysroot')) {
+    $destination = Join-Path $work $directory
+    if (Test-Path -LiteralPath $destination) { Remove-NativeSdkBuildDirectory $destination $work }
+    Copy-Item -LiteralPath (Join-Path $sdk $directory) -Destination $destination -Recurse
+  }
 }
 $null = Build-HdrWorker
 if (Test-Path -LiteralPath $runtime) {
@@ -136,6 +107,14 @@ if (Test-Path -LiteralPath $runtime) {
   Remove-Item -LiteralPath $resolved -Recurse -Force
 }
 [IO.Directory]::CreateDirectory($runtime) | Out-Null
+if ($sdk) {
+  Copy-Item -Path (Join-Path $sdk 'runtime/*') -Destination $runtime -Recurse -Force
+  Copy-Item -LiteralPath (Join-Path $work 'install/bin/viewer_hdr_video.exe') -Destination $runtime
+  $null = Get-WorkerImports (Join-Path $runtime 'viewer_hdr_video.exe')
+  $files = @(Get-ChildItem -LiteralPath $runtime -File | ForEach-Object {
+    [pscustomobject]@{name=$_.Name;bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}
+  })
+} else {
 $lookup = @{}
 foreach ($directory in @((Join-Path $work 'install/bin'), (Join-Path $work 'sysroot/mingw64/bin'))) {
   Get-ChildItem -LiteralPath $directory -File | ForEach-Object { $lookup[$_.Name.ToLowerInvariant()] = $_.FullName }
@@ -175,6 +154,7 @@ $notice = @(
   'These separately loaded libraries may be replaced with ABI-compatible modified builds.'
 ) -join [Environment]::NewLine
 [IO.File]::WriteAllText((Join-Path $licenses 'SOURCES.txt'), $notice, [Text.UTF8Encoding]::new($false))
+}
 $version = & (Join-Path $runtime 'ffmpeg.exe') -version
 if ($LASTEXITCODE -ne 0) { throw 'FFmpeg 运行组件启动失败' }
 $manifest = [ordered]@{ version = '9.0.2'; platform = 'windows-x64'; profile = 'playback'; identity = $identity; workerIdentity = $workerIdentity; files = @($files | Sort-Object name); runtimeBytes = ($files | Measure-Object bytes -Sum).Sum; versionOutput = @($version) }
