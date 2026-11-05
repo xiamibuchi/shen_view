@@ -8,6 +8,7 @@
 . (Join-Path $PSScriptRoot 'native_cache.ps1')
 $ErrorActionPreference = 'Stop'
 $recipe = Join-Path $RepositoryRoot 'third_party/ffmpeg'
+. (Join-Path $recipe 'download.ps1')
 $work = Join-Path $NativeBuildRoot 'ffmpeg/windows-x64'
 $runtime = Join-Path $work 'runtime'
 $manifestPath = Join-Path $runtime 'manifest.json'
@@ -97,9 +98,7 @@ $DownloadCache = [IO.Path]::GetFullPath($DownloadCache)
 [IO.Directory]::CreateDirectory($work) | Out-Null
 function Acquire($item) {
   $file = Join-Path $DownloadCache ([IO.Path]::GetFileName($item.url))
-  if (-not (Test-Path -LiteralPath $file)) { Invoke-WebRequest -UseBasicParsing -Uri $item.url -OutFile $file }
-  if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ne $item.sha256) { throw "下载文件 SHA256 不符：$file" }
-  return $file
+  Get-VerifiedFfmpegDownload -Uri $item.url -Sha256 $item.sha256 -Destination $file
 }
 function Extract([string]$Archive, [string]$Destination) {
   & $SevenZip x $Archive "-o$Destination" -y -bso0 -bsp0
