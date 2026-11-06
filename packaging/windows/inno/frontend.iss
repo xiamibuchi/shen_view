@@ -119,7 +119,7 @@ var
   Gauge: TNewProgressBar;
   UILanguage, RootPath, InstalledRoot, PreviousExecutable, JobDirectory, Worker, Failure, PreferenceFile: String;
   Removing, Working, Completed, Relayouting, PathHasError: Boolean;
-  Failed, CloseWhenFinished, Restoring: Boolean;
+  Failed, CloseWhenFinished, Restoring, AuthorizationPending: Boolean;
   RecoveryOutcome, RecoveryDirectory: String;
   PollTimer: NativeUInt;
   SyncingSelection: Boolean;
@@ -248,8 +248,9 @@ end;
 procedure UpdateCloseButton;
 begin
   WorkingHint.Visible := Working;
-  DeferredClose.Visible := Working;
-  if CloseWhenFinished then WorkingHint.Caption := Tr('成功后自动关闭；失败时会重新显示。','Closes on success; reopens if the operation fails.')
+  DeferredClose.Visible := Working and not AuthorizationPending;
+  if AuthorizationPending then WorkingHint.Caption := Tr('尚未开始修改安装文件。','Installation files have not been changed.')
+  else if CloseWhenFinished then WorkingHint.Caption := Tr('成功后自动关闭；失败时会重新显示。','Closes on success; reopens if the operation fails.')
   else WorkingHint.Caption := Tr('可最小化，操作会继续。','You can minimize while the operation continues.');
   Language.Visible := not Working and not Completed and not Failed;
   LogDetails.Visible := not Working and (Failure <> '') and (JobDirectory <> '');
@@ -738,8 +739,25 @@ begin
   end;
 end;
 
+procedure SetAuthorizationPending(Pending: Boolean);
+begin
+  AuthorizationPending := Pending;
+  if Pending then begin
+    StateTitle.Caption := Tr('等待管理员授权','Waiting for administrator approval');
+    StateDetail.Caption := Tr('请在 Windows 用户账户控制窗口中选择“是”。取消授权后可返回并保留选项。',
+      'Choose Yes in the Windows User Account Control dialog. If you cancel, you can return with your choices kept.');
+  end else begin
+    StateTitle.Caption := ActionName + Tr('中…',' in progress…');
+    StateDetail.Caption := Tr('正在启动执行程序，请稍候。','Starting the operation. Please wait.');
+  end;
+  Gauge.Visible := not Pending;
+  ProgressText.Visible := not Pending;
+  UpdateCloseButton;
+  WizardForm.Refresh;
+end;
+
 function RunWorker: Boolean;
-var Params, Verb, EngineLanguage: String; ErrorCode: Integer;
+var Params, Verb, EngineLanguage: String; ErrorCode: Integer; Launched: Boolean;
 begin
   Result := False;
   RootPath := EffectiveRoot;
@@ -782,7 +800,10 @@ begin
   end;
   Verb := 'runas';
   if IsValidation then Verb := '';
-    if not ShellExec(Verb, Worker, Params, ExpandConstant('{%TEMP}'), SW_HIDE, ewNoWait, ErrorCode) then begin
+    if not IsValidation then SetAuthorizationPending(True);
+    Launched := ShellExec(Verb, Worker, Params, ExpandConstant('{%TEMP}'), SW_HIDE, ewNoWait, ErrorCode);
+    if not IsValidation then SetAuthorizationPending(False);
+    if not Launched then begin
       if ErrorCode = 1223 then Failure := Tr('已取消授权，安装选项已保留。', 'Authorization cancelled. Your choices were kept.')
       else Failure := SysErrorMessage(ErrorCode);
       exit;
