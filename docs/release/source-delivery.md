@@ -14,7 +14,7 @@
 ZIP 内的 ShenView 程序未进行受信任的发布者签名，可能出现 SmartScreen 警告。
 若另外提供未签名 EXE 安装器，UAC 可能显示“未知发布者”；安装器仍须完成独立验收。
 不要求用户关闭 SmartScreen、杀毒软件或系统安全策略。SHA256 可用于核对文件完整性，不能替代发布者签名。
-只从本仓库的 Release 下载，按 SHA256SUMS.txt 核对应用包。
+只从本仓库的 Release 下载，按与 ZIP 同名的 .sha256 文件核对应用包。
 SOURCES-SHA256SUMS.txt 校验本版本的源码索引和许可快照；远程源码归档的 SHA256 及大小记录在 SOURCES.json。
 
 ## 固定源码链接
@@ -81,7 +81,7 @@ powershell -ExecutionPolicy Bypass -File tool/release/package_windows_sources.ps
 更改源码归档时创建新的 SDK 或集中源码版本；不覆盖旧版本附件。
 
 release 分支合入 main 后，Release 流程生成源码索引和许可快照并创建未签名预发布草稿；日常 PR 不下载这些大归档。
-应用 Release 共 6 个附件：应用 ZIP、SHA256SUMS.txt、release.json、版本 notices.zip、SOURCES.json、SOURCES-SHA256SUMS.txt。
+应用 Release 共 6 个附件：应用 ZIP、同名 .zip.sha256、release.json、版本 notices.zip、SOURCES.json、SOURCES-SHA256SUMS.txt。
 草稿保留固定源码链接及重建说明；仍需检查验收结果、已知限制与附件完整性，再人工公开。
 渠道模板如以后启用，应引用固定版本的 /releases/download/v版本/文件名，使用最终附件哈希，不能指向可变的 latest 下载。
 

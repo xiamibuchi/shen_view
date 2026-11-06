@@ -9,7 +9,7 @@ $manifest = Get-Content -LiteralPath (Join-Path $directory 'release.json') -Raw 
 if ($manifest.installerType -ne 'portable') { throw '需要独立便携包的 release.json。' }
 if ([IO.Path]::GetFileName($manifest.package) -ne $manifest.package) { throw '包名不能包含路径。' }
 $zip = Join-Path $directory $manifest.package
-$expected = (Get-Content -LiteralPath (Join-Path $directory 'SHA256SUMS.txt') -Raw).Trim()
+$expected = (Get-Content -LiteralPath (Join-Path $directory ($manifest.package + '.sha256')) -Raw).Trim()
 $actual = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + $manifest.package
 if ($expected -cne $actual) { throw '便携包 SHA256 不匹配。' }
 $work = Join-Path $NativeBuildRoot ('packaging/portable-smoke-' + [guid]::NewGuid().ToString('N'))

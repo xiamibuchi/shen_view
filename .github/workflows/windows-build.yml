@@ -187,7 +187,7 @@ jobs:
           name: ${{ inputs.artifact-name }}
           path: |
             artifacts/releases/**/portable-ci/*portable.zip
-            artifacts/releases/**/portable-ci/SHA256SUMS.txt
+            artifacts/releases/**/portable-ci/*.zip.sha256
             artifacts/releases/**/portable-ci/release.json
           if-no-files-found: error
           retention-days: 14

@@ -169,7 +169,7 @@ try {
     if ($LASTEXITCODE -gt 1) { throw '无法核对源码改动。' }
     $dirty = $LASTEXITCODE -eq 1 -or @(& git -C $root ls-files --others --exclude-standard).Count -ne 0
     $zipHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    SaveText (Join-Path $out 'SHA256SUMS.txt') ($zipHash + '  ' + $zipName + [Environment]::NewLine)
+    SaveText (Join-Path $out ($zipName + '.sha256')) ($zipHash + '  ' + $zipName + [Environment]::NewLine)
     SaveText (Join-Path $out 'release.json') (@{
       version = $version; windowsVersion = $fileVersion; architecture = 'x64'; signed = $false
       package = $zipName; sourceCommit = $sourceCommit; sourceDirty = $dirty; installerType = 'portable'

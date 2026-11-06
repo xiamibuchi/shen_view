@@ -102,8 +102,12 @@ release 分支的发布 PR 合入 main 后，Draft Windows release 对 merge_com
 同一套检查和打包。它不复用 PR artifact，也不因关闭未合并的 PR 而发包。
 创建草稿的 job 才有 contents: write，检查构建 job 保持只读权限。
 
-草稿固定目标 SHA，附便携 ZIP、SHA256SUMS.txt、release.json、许可快照、SOURCES.json 和索引校验文件，
+草稿固定目标 SHA，附便携 ZIP、同名 .zip.sha256、release.json、许可快照、SOURCES.json 和索引校验文件，
 标记为 unsigned preview。ShenView 源码链接准确提交，SDK 与第三方源码复用本仓库已公开的固定源码 Release。
+正文依次展示下载入口、版本功能与修复、使用限制、源码与许可；英文与构建资料折叠展示。
+版本说明来自 docs/release/notes/<版本>.zh-CN.md 和同版本 .en.md，发布新版本前需准备两份说明。
+下载表格固定将 ZIP 与其 .sha256 放在最前，不依赖 GitHub Assets 的名称排序；文件名不加数字前缀。
+验收待办保留在发布 Issue，不写入对外正文。生成区之外的维护者说明会保留，生成区内手工编辑会被模板更新覆盖。
 发布流程下载并核对远程源码哈希、归档及版本对应关系，上传前再核对源码提交和远程附件摘要，不重复上传大源码包。
 不自动公开、不自动将构建号提交回仓库，不借助工作流创建的 tag 触发第二个工作流。
 同一 SHA 的草稿可重跑更新；未打 Tag 的草稿可推进到当前 main 的后续合并提交，必须由 GitHub 比较确认祖先关系。
