@@ -1,4 +1,4 @@
-function Resolve-ShenViewTool {
+﻿function Resolve-ShenViewTool {
   param([string]$Command, [string[]]$Candidates = @(), [switch]$Optional)
   if ([IO.Path]::IsPathRooted($Command) -or $Command.Contains('/') -or $Command.Contains([char]92)) {
     $Candidates = @()
@@ -74,4 +74,16 @@ function Resolve-ShenViewCMake([string]$Command = 'cmake') {
   $vswhere = Resolve-ShenViewVsWhere
   $installation = & $vswhere -latest -products '*' -property installationPath
   Resolve-ShenViewTool cmake -Candidates @(Join-Path $installation 'Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe')
+}
+
+function Resolve-ShenViewVisualStudioGenerator([string]$Generator = '') {
+  if ($Generator) { return $Generator }
+  $vswhere = Resolve-ShenViewVsWhere
+  $version = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationVersion
+  if ($LASTEXITCODE -ne 0 -or -not $version) { throw '未找到 Visual Studio C++ 工具链。' }
+  switch (([version]$version).Major) {
+    17 { return 'Visual Studio 17 2022' }
+    18 { return 'Visual Studio 18 2026' }
+    default { throw "未配置该 Visual Studio 版本的 CMake generator：$version" }
+  }
 }

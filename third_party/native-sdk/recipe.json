@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "producerRunner": "windows-2022",
+  "hdrGenerator": "Visual Studio 17 2022",
+  "hdrSources": ["viewer_jpeg", "libaom", "viewer_avif", "viewer_lcms", "viewer_libraw", "ultrahdr"],
+  "inputs": [
+    "third_party/native-sdk/recipe.json",
+    "third_party/native-sdk/hdr-dependencies.cmake",
+    "third_party/native-sdk/ShenViewHdrConfig.cmake.in",
+    "third_party/native-sdk/windows-sources.lock.json",
+    "third_party/cmake/dependencies.cmake",
+    "third_party/ffmpeg/source.lock.json",
+    "third_party/ffmpeg/windows-packages.lock.json",
+    "third_party/ffmpeg/profile.sh",
+    "third_party/ffmpeg/build-windows.sh",
+    "third_party/ffmpeg/patches",
+    "third_party/ffmpeg/licenses",
+    "third_party/ffmpeg/download.ps1",
+    "tool/build/ffmpeg_dependencies.ps1",
+    "tool/build/package_native_sdk.ps1"
+  ]
+}

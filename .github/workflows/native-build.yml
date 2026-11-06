@@ -1,0 +1,99 @@
+name: Build Windows dependency SDK
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+      artifact-prefix:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: Dependency SDK (${{ matrix.component }})
+    runs-on: windows-2022
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [hdr, ffmpeg]
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      SHENVIEW_NATIVE_BUILD_MODE: Source
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
+        if: matrix.component == 'ffmpeg'
+        id: msys
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc
+      - name: Set compiler path
+        if: matrix.component == 'ffmpeg'
+        env:
+          MSYS_LOCATION: ${{ steps.msys.outputs.msys2-location }}
+        run: Add-Content $env:GITHUB_PATH (Join-Path $env:MSYS_LOCATION 'mingw64/bin')
+      - name: Build dependencies, package SDK and relink current helper
+        id: sdk
+        env:
+          NATIVE_COMPONENT: ${{ matrix.component }}
+        run: |
+          $log = Join-Path $env:GITHUB_WORKSPACE 'artifacts/ci'
+          $lock = Get-Content third_party/native-sdk.lock.json -Raw | ConvertFrom-Json
+          "version=$($lock.version)" | Add-Content -LiteralPath $env:GITHUB_OUTPUT
+          New-Item -ItemType Directory -Force $log | Out-Null
+          . ./tool/ci/timing.ps1
+          $CiTimingPath = Join-Path $log 'native-timings.jsonl'
+          Measure-CiStage "Source SDK $env:NATIVE_COMPONENT" {
+            if ($env:NATIVE_COMPONENT -eq 'hdr') {
+              $recipe = Get-Content third_party/native-sdk/recipe.json -Raw | ConvertFrom-Json
+              if (-not $recipe.hdrGenerator) { throw 'SDK production generator must be pinned' }
+              & ./tool/build/build_hdr_codecs.ps1 -Generator $recipe.hdrGenerator *>&1 | Tee-Object -FilePath (Join-Path $log 'source-build.log')
+            } else {
+              & ./tool/ci/native-cache.ps1 -Action Build -Component Ffmpeg *>&1 | Tee-Object -FilePath (Join-Path $log 'source-build.log')
+            }
+            & ./tool/build/package_native_sdk.ps1 -Component $env:NATIVE_COMPONENT
+          }
+          $lock = Get-Content third_party/native-sdk.lock.json -Raw | ConvertFrom-Json
+          $env:SHENVIEW_NATIVE_SDK_ROOT = Join-Path $env:GITHUB_WORKSPACE "artifacts/native-sdk/$($lock.version)"
+          $env:SHENVIEW_NATIVE_BUILD_MODE = 'Sdk'
+          Measure-CiStage "SDK relink $env:NATIVE_COMPONENT" {
+            & ./tool/ci/native-cache.ps1 -Action Build -Component $env:NATIVE_COMPONENT *>&1 | Tee-Object -FilePath (Join-Path $log 'sdk-relink.log')
+          }
+      - name: Upload candidate SDK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact-prefix }}-${{ matrix.component }}
+          path: |
+            artifacts/native-sdk/${{ steps.sdk.outputs.version }}/shenview-${{ matrix.component }}-sdk-windows-x64.zip
+            artifacts/native-sdk/${{ steps.sdk.outputs.version }}/${{ matrix.component }}-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload corresponding sources
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact-prefix }}-${{ matrix.component }}-sources
+          path: |
+            artifacts/native-sdk/${{ steps.sdk.outputs.version }}/shenview-${{ matrix.component }}-sources-windows-x64.zip
+            artifacts/native-sdk/${{ steps.sdk.outputs.version }}/${{ matrix.component }}-sources-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload native diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact-prefix }}-${{ matrix.component }}-diagnostics
+          path: artifacts/ci
+          if-no-files-found: warn
+          retention-days: 14

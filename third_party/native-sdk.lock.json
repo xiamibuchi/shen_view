@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "version": "1.0.1",
+  "platform": "windows-x64",
+  "recipeSha256": "5ccba4f0dc9c1a7b185ce32a4c515bbdf5d512f1085d4567ed7b7afa39d44f7a",
+  "components": {
+    "hdr": {
+      "asset": "shenview-hdr-sdk-windows-x64.zip",
+      "sha256": "cd56c741cc69c068ee4181bf809b629cfc9731e39a4b035bdf442efdfd500de7"
+    },
+    "ffmpeg": {
+      "asset": "shenview-ffmpeg-sdk-windows-x64.zip",
+      "sha256": "ffbf922400f8edc9a82ec7f15d498360be830a04519717a8cc14ba21ffca4978"
+    }
+  }
+}

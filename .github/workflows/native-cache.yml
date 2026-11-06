@@ -1,0 +1,64 @@
+name: Publish dependency SDK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'release/**']
+    paths:
+      - 'third_party/native-sdk.lock.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-sdk-publish
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: github.repository == 'xiamibuchi/shen_view' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.plan.outputs.build }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - id: plan
+        shell: pwsh
+        run: ./tool/ci/native-sdk.ps1 -Action Plan
+  build:
+    needs: plan
+    if: needs.plan.outputs.build == 'true'
+    uses: ./.github/workflows/native-build.yml
+    with:
+      ref: ${{ github.sha }}
+      artifact-prefix: native-sdk-publish-${{ github.run_id }}
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: native-sdk-publish-${{ github.run_id }}-hdr
+          path: sdk-assets
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: native-sdk-publish-${{ github.run_id }}-ffmpeg
+          path: sdk-assets
+      - name: Download corresponding sources
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: native-sdk-publish-${{ github.run_id }}-*-sources
+          merge-multiple: true
+          path: sdk-assets
+      - name: Publish versioned SDK without replacing application Latest
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            await require('./.github/scripts/native-sdk-release.cjs').publish({github, context, core});

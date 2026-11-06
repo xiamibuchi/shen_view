@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '../paths.ps1')
 $testRoot = Join-Path $NativeBuildRoot ('toolchain-test-' + [guid]::NewGuid().ToString('N'))
 $environmentNames = @('PATH', 'FLUTTER_ROOT', 'ProgramFiles', 'ProgramW6432', 'ProgramFiles(x86)')

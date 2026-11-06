@@ -1,6 +1,6 @@
-param(
+﻿param(
   [string]$CMake = 'cmake',
-  [string]$Generator = 'Visual Studio 18 2026',
+  [string]$Generator = '',
   [string]$Architecture = 'x64',
   [string]$SevenZipEngine = ''
 )
@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = $RepositoryRoot
 $CMake = Resolve-ShenViewCMake $CMake
+$Generator = Resolve-ShenViewVisualStudioGenerator $Generator
 if (-not $SevenZipEngine) {
   $lockedCodecs = & (Join-Path $PSScriptRoot 'install_windows_codecs.ps1')
   $SevenZipEngine = Join-Path $lockedCodecs.SevenZipDirectory '7z.dll'

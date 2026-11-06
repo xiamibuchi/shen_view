@@ -33,6 +33,11 @@ build from the repository root with:
 powershell -ExecutionPolicy Bypass -File tool/build/build_hdr_codecs.ps1
 ```
 
+Windows x64 uses the locked [dependency SDK](../../docs/development/native-sdk.md)
+by default and compiles the current helper sources. Use `-DependencyMode Source`
+to build third-party libraries locally. The SDK requires a compatible or newer
+MSVC toolchain, x64, Release and the dynamic CRT.
+
 On macOS, use the same CMake project with Xcode and a native architecture:
 
 ```sh

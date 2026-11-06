@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$ReleaseDirectory = '',
   [string]$ImageMagickDirectory = '',
   [string]$SevenZipDirectory = ''
@@ -94,10 +94,7 @@ $heifGainMap = Join-Path $NativeBuildRoot 'hdr-codecs/bin/viewer_heif_gainmap.ex
 if (Test-Path -LiteralPath $heifGainMap) { Copy-Item -LiteralPath $heifGainMap -Destination $magickDirectory }
 $raw = Join-Path $NativeBuildRoot 'hdr-codecs/bin/viewer_raw.exe'
 if (Test-Path -LiteralPath $raw) { Copy-Item -LiteralPath $raw -Destination $codecs }
-$avifRoot = Join-Path $NativeBuildRoot 'avif-codecs'
-if (-not (Test-Path -LiteralPath (Join-Path $avifRoot 'bin/viewer_avif_animation.exe'))) {
-  $avifRoot = Join-Path $NativeBuildRoot 'hdr-codecs'
-}
+$avifRoot = Join-Path $NativeBuildRoot 'hdr-codecs'
 $avifAnimation = Join-Path $avifRoot 'bin/viewer_avif_animation.exe'
 if (-not (Test-Path -LiteralPath $avifAnimation)) { throw '缺少 AVIF 动画组件，请先运行 tool/build/build_hdr_codecs.ps1。' }
 Copy-Item -LiteralPath $avifAnimation -Destination $codecs

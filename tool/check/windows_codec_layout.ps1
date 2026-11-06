@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([Parameter(Mandatory)][string]$InstallRoot,[Parameter(Mandatory)][string]$OutputDirectory)
 
 . (Join-Path $PSScriptRoot '../paths.ps1')
@@ -14,7 +14,7 @@ function Invoke-Codec([string]$Relative,[string[]]$Arguments,[string]$Name,[stri
   $info.UseShellExecute=$false;$info.CreateNoWindow=$true;$info.WorkingDirectory=$OutputDirectory
   $info.RedirectStandardInput=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
   $info.Arguments=($Arguments | ForEach-Object {'"'+$_+'"'}) -join ' '
-  $info.EnvironmentVariables['PATH']=Join-Path $env:SystemRoot 'System32'
+  $info.EnvironmentVariables['PATH']=(Split-Path $info.FileName)+';'+(Join-Path $env:SystemRoot 'System32')
   $info.EnvironmentVariables['MAGICK_CONFIGURE_PATH']=Split-Path $info.FileName
   $info.EnvironmentVariables['MAGICK_CODER_MODULE_PATH']=Join-Path (Split-Path $info.FileName) 'modules/coders'
   $info.EnvironmentVariables['MAGICK_FILTER_MODULE_PATH']=Join-Path (Split-Path $info.FileName) 'modules/filters'
@@ -64,7 +64,7 @@ foreach($fixture in @(
   Assert ($null-ne$metadata.PSObject.Properties['dateTimeOriginal']) ('RAW 拍摄时间缺失: '+$fixture.name)
   Assert ($metadata.dateTimeOriginal-eq$fixture.date) ('RAW 拍摄时间缺失或不匹配: '+$fixture.name)
 }
-foreach($extension in @('dds','psd','jxl','heif')){
+foreach($extension in @('dds','psd','avif','jxl','heif')){
   $source=Join-Path $fixtures ('format_static.'+$extension)
   if($extension-eq'heif'){$source=Join-Path $fixtures 'format_alpha.heif'}
   $output=Invoke-Codec 'codecs/imagemagick/magick.exe' @(($source+'[0]'),'-resize','64x64','png:-') ('decode-'+$extension)

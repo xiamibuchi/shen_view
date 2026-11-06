@@ -1,5 +1,6 @@
 param(
-  [string]$Flutter = ''
+  [string]$Flutter = '',
+  [ValidateSet('All','Static','Test')][string]$Mode = 'All'
 )
 
 . (Join-Path $PSScriptRoot '../paths.ps1')
@@ -13,6 +14,7 @@ $checks = @(
   @{ Name = 'analyze'; Arguments = @('analyze') },
   @{ Name = 'test'; Arguments = @('test') }
 )
+$checks = @($checks | Where-Object { $Mode -eq 'All' -or ($Mode -eq 'Static' -and $_.Name -ne 'test') -or ($Mode -eq 'Test' -and $_.Name -eq 'test') })
 $results = @()
 $totalTime = [Diagnostics.Stopwatch]::StartNew()
 

@@ -42,6 +42,7 @@
 
 - [开发入门：环境准备、构建运行与检查](development/getting-started.md)
 - [Git 工作流：提交格式与 LFS](development/git-workflow.md)
+- [分支、PR 检查与便携包发布](development/branches-and-ci.md)
 - [配置存储与排查](development/troubleshooting.md)
 - [验证入口与验收边界](development/validation.md)
 - [Windows 真机回归](development/windows-regression.md)
@@ -49,6 +50,7 @@
 ## 发布资料
 
 - [分发范围与待完成事项](release/distribution.md)
+- [Windows 预览版验收](release/windows-preview-acceptance.md)
 - [压缩包分发许可](release/archive-licensing.md)
 - [开源许可维护](release/open-source-licenses.md)
 - 应用商店文案：[简体中文](release/store-listing.zh-CN.md) / [English](release/store-listing.en-US.md)

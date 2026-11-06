@@ -266,7 +266,6 @@ class FolderIndexService {
         errorsAreFatal: true,
       );
       request?.addCancelListener(cancel);
-      request?.throwIfCancelled();
       return await completion.future;
     } finally {
       request?.removeCancelListener(cancel);

@@ -8,8 +8,10 @@ source.lock.json 固定 FFmpeg 9.0.2 官方源码及 SHA256；windows-packages.l
 避免 FFmpeg 为探测滤镜连接而解析临时图时额外创建一次 Vulkan 设备。
 构建脚本自动应用，补丁纳入构建身份并随许可证中的构建配方分发。
 
-在仓库根运行 tool/build/build_ffmpeg.ps1。需要 Git Bash、TDM GCC x64、7-Zip；
-脚本校验下载，构建共享库，递归收集 PE 导入依赖，拒绝缺失的非系统 DLL。
+在仓库根运行 tool/build/build_ffmpeg.ps1。Windows x64 默认复用锁定的
+[原生 SDK](../../docs/development/native-sdk.md)，仅使用 MinGW GCC 编译当前 worker；
+显式 `-DependencyMode Source` 时需要 Git Bash、TDM GCC x64、7-Zip，脚本校验下载、
+构建共享库并递归收集 PE 导入依赖。两种模式都拒绝缺失的 worker 非系统 DLL。
 产物位于 build/ffmpeg/windows-x64/runtime/，manifest.json 记录构建身份及二进制哈希。
 Windows Flutter 构建自动校验并复制组件到 codecs/ffmpeg/，发行打包流程另将许可复制到
 codecs/licenses/ffmpeg/，供应用「第三方许可」读取。

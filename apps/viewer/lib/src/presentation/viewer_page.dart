@@ -4853,11 +4853,13 @@ class _ViewerPageState extends State<ViewerPage>
         _spreadMetadataFuture == null) {
       _spreadMetadataSource = _metadataFuture;
       _spreadMetadataPeerId = metadataPeer?.id;
+      // Cached metadata uses SynchronousFuture; Future.wait requires deferred callbacks.
       _spreadMetadataFuture = Future.wait<ImageMetadata?>([
-        _metadataFuture ?? _resources.metadata(entry),
+        Future<ImageMetadata?>.value(
+          _metadataFuture ?? _resources.metadata(entry),
+        ),
         if (metadataPeer != null)
-          _resources
-              .metadata(metadataPeer)
+          Future<ImageMetadata?>.value(_resources.metadata(metadataPeer))
               .then<ImageMetadata?>(
                 (value) => value,
                 onError: (Object error, StackTrace stack) => null,

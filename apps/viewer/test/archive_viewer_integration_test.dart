@@ -33,6 +33,7 @@ import 'package:shen_view/src/domain/view_scale_mode.dart';
 import 'package:shen_view/src/presentation/archive_password_dialog.dart';
 import 'package:shen_view/src/presentation/comic_strip_viewport.dart';
 import 'package:shen_view/src/presentation/hdr_image_view.dart';
+import 'package:shen_view/src/presentation/image_navigation_transition.dart';
 import 'package:shen_view/src/presentation/theme/app_theme.dart';
 import 'package:shen_view/src/presentation/source_image_view.dart';
 import 'package:shen_view/src/presentation/viewer_bottom_bar.dart';
@@ -178,6 +179,35 @@ void main() {
       await _drain(tester);
     },
   );
+
+  testWidgets('double page combines loaded primary and cached peer metadata', (
+    tester,
+  ) async {
+    _mockHost(tester);
+    final root = Directory.systemTemp.createTempSync('cached-spread-');
+    addTearDown(() => _deleteFixture(root));
+    final source = _scrollFixture(root, false);
+    await _pumpArchiveHost(
+      tester,
+      _host(
+        source,
+        settings: const ViewerSettings(
+          showDirectoryPanel: false,
+          doublePageFirstAlone: false,
+          doublePageWideAlone: false,
+        ),
+      ),
+    );
+    await _waitForSelectedImage(tester);
+    final bar = _bar(tester)!;
+    final peer = bar.controller.entries[1];
+    unawaited(bar.resources.metadata(peer));
+    await _waitFor(tester, () => bar.resources.cachedMetadata(peer) != null);
+    await _chooseMode(tester, '双页');
+    await _waitForSelectedImage(tester, minimum: 2);
+    expect(tester.takeException(), isNull);
+    await _finishViewer(tester, source);
+  });
 
   for (final archiveView in [false, true]) {
     testWidgets(
@@ -2859,6 +2889,8 @@ void main() {
           expect(transform.value, before);
           expect(changes, 0);
           await tester.pump();
+          expect(transform.value, before);
+          expect(changes, 0);
           expect(await _pixels(tester, '$label-after-inertia'), pixels);
         } finally {
           transform.removeListener(onTransform);
@@ -3726,35 +3758,77 @@ Future<void> _waitForSelectedImage(
   WidgetTester tester, {
   int minimum = 1,
 }) async {
-  await _waitForImage(tester);
-  // The old transition has ended by now; require the current spread to paint.
+  // Bitmap decoding can finish before metadata sizes the viewport. A pixel
+  // baseline must include that layout update, not just the first painted frame.
+  final controller = _bar(tester)!.controller;
   await _waitFor(
     tester,
     () =>
-        tester
+        controller.currentEntry != null &&
+        _bar(tester)!.resources.cachedMetadata(controller.currentEntry!) !=
+            null,
+  );
+  final metadataBuilders = find.ancestor(
+    of: find.byType(ZoomableViewport),
+    matching: find.byWidgetPredicate(
+      (widget) => widget is FutureBuilder<Object?>,
+    ),
+  );
+  if (metadataBuilders.evaluate().isNotEmpty) {
+    final metadata = tester
+        .widget<FutureBuilder<Object?>>(metadataBuilders.first)
+        .future;
+    var ready = metadata == null;
+    Object? failure;
+    StackTrace? failureStack;
+    unawaited(
+      metadata?.then<void>(
+        (_) => ready = true,
+        onError: (Object error, StackTrace stack) {
+          failure = error;
+          failureStack = stack;
+          ready = true;
+        },
+      ),
+    );
+    await _waitFor(tester, () => ready);
+    if (failure != null) Error.throwWithStackTrace(failure!, failureStack!);
+  }
+  await _waitForImage(tester);
+  // AnimatedSwitcher retains outgoing pages; only the current child can prove
+  // that the selected spread is painted.
+  await _waitFor(tester, () {
+    final viewport = find.byType(ZoomableViewport);
+    final transitions = find.descendant(
+      of: viewport,
+      matching: find.byType(ImageNavigationTransition),
+    );
+    final current = transitions.evaluate().isEmpty
+        ? viewport
+        : find.byWidget(
+            tester.widget<ImageNavigationTransition>(transitions.first).child,
+          );
+    return tester
             .widgetList<RawImage>(
-              find.descendant(
-                of: find.byType(ZoomableViewport),
-                matching: find.byType(RawImage),
-              ),
+              find.descendant(of: current, matching: find.byType(RawImage)),
             )
             .where((image) => image.image != null)
             .length >=
-        minimum,
-  );
-  final controller = _bar(tester)!.controller;
-  if (!controller.isArchiveView) return;
-  await _waitFor(
-    tester,
-    () => tester
-        .widgetList<RawImage>(
-          find.descendant(
-            of: find.byKey(ValueKey('source:${controller.currentEntry!.id}')),
-            matching: find.byType(RawImage),
-          ),
-        )
-        .any((image) => image.image != null),
-  );
+        minimum;
+  });
+  if (controller.isArchiveView) {
+    await _waitFor(
+      tester,
+      () => tester
+          .widgetList<RawImage>(
+            find.descendant(
+              of: find.byKey(ValueKey('source:${controller.currentEntry!.id}')),
+              matching: find.byType(RawImage),
+            ),
+          )
+          .any((image) => image.image != null),
+    );
+  }
   await _drain(tester);
 }
 

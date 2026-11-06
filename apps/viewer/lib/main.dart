@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'l10n/app_localizations.dart';
@@ -64,7 +66,9 @@ Future<void> main(List<String> arguments) async {
         allowActivation: DesktopInstancePlatform.allowActivation,
       );
       if (instances == null) {
-        exit(0);
+        // Let the desktop runner release its engine and platform resources.
+        await ServicesBinding.instance.exitApplication(ui.AppExitType.required);
+        return;
       }
     }
   } on FileSystemException catch (error) {
@@ -92,7 +96,10 @@ Future<void> main(List<String> arguments) async {
                   const SizedBox(height: 16),
                   AppButton(
                     label: chinese ? '关闭' : 'Close',
-                    onPressed: () => exit(1),
+                    onPressed: () => ServicesBinding.instance.exitApplication(
+                      ui.AppExitType.required,
+                      1,
+                    ),
                   ),
                 ],
               ),

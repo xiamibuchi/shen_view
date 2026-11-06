@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [string]$Flutter = 'flutter',
   [string]$InnoCompiler = '',
@@ -12,7 +12,8 @@ param(
   [string]$CertificateThumbprint = '',
   [switch]$Unsigned,
   [switch]$SkipBuild,
-  [switch]$SkipCodecs
+  [switch]$SkipCodecs,
+  [switch]$PortableOnly
 )
 
 . (Join-Path $PSScriptRoot '../paths.ps1')
@@ -63,15 +64,16 @@ try {
   if (@($parts | Where-Object { $_ -gt 65535 }).Count) { throw 'Windows 版本的每一部分必须小于等于 65535。' }
   $version = $parts[0..2] -join '.'
   $fileVersion = $parts -join '.'
-  if (-not $WindowsSdkBin) {
+  if (-not $PortableOnly -and -not $WindowsSdkBin) {
     $sdk = Get-ChildItem -LiteralPath (Join-Path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Windows Kits/10/bin') -Directory |
       Where-Object { $_.Name -match '^10\.0\.\d+\.0$' } | Sort-Object { [version]$_.Name } -Descending |
       Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'x64/makeappx.exe') } | Select-Object -First 1
     if (-not $sdk) { throw '未找到 Windows SDK makeappx.exe，请传 -WindowsSdkBin。' }
     $WindowsSdkBin = Join-Path $sdk.FullName 'x64'
   }
-  $makeAppx = Join-Path $WindowsSdkBin 'makeappx.exe'
-  $signTool = Join-Path $WindowsSdkBin 'signtool.exe'
+  $makeAppx = if ($WindowsSdkBin) { Join-Path $WindowsSdkBin 'makeappx.exe' } else { '' }
+  $signTool = if ($WindowsSdkBin) { Join-Path $WindowsSdkBin 'signtool.exe' } else { '' }
+  if ($PortableOnly -and -not $Unsigned) { throw '独立便携包入口目前只支持 -Unsigned。' }
   if (-not $RuntimeDirectory -and -not $PayloadDirectory) {
     $vswhere = Resolve-ShenViewVsWhere
     $visualStudio = & $vswhere -latest -products '*' -property installationPath
@@ -94,7 +96,7 @@ try {
   $payload = Join-Path $work 'payload'
   $portable = Join-Path $work 'portable'
   $msix = Join-Path $work 'msix'
-  $flavor = if ($Unsigned) { 'unsigned' } else { 'signed' }
+  $flavor = if ($PortableOnly) { 'portable-ci' } elseif ($Unsigned) { 'unsigned' } else { 'signed' }
   $out = Join-Path $root "artifacts/releases/$fileVersion/windows-x64/$flavor"
   [IO.Directory]::CreateDirectory($out) | Out-Null
   $dart = Join-Path (Split-Path -Parent $Flutter) 'dart.bat'
@@ -132,6 +134,7 @@ try {
       'codecs/ffmpeg/manifest.json', 'codecs/ffmpeg/licenses/SOURCES.txt', 'codecs/licenses/ffmpeg')) {
     if (-not (Test-Path -LiteralPath (Join-Path $payload $required))) { throw "发布文件缺失：$required" }
   }
+  Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $payload 'LICENSE')
   if (-not $Unsigned) {
     $certificate = Get-Item -LiteralPath "Cert:/CurrentUser/My/$CertificateThumbprint" -ErrorAction Stop
     if ($certificate.Subject -ne $metadata.publisher) { throw 'MSIX Publisher 必须与签名证书 Subject 一致，请使用 -Publisher。' }
@@ -151,7 +154,7 @@ try {
   Copy-Item -LiteralPath $payload -Destination $portable -Recurse
   SaveText (Join-Path $portable 'installation-mode') 'portable'
   [IO.Directory]::CreateDirectory((Join-Path $portable 'user-data')) | Out-Null
-  SaveText (Join-Path $portable 'README-portable.txt') "ShenView $version portable: extract the entire archive before running ShenView.exe. Settings and archive cache are stored in user-data. File associations are optional in Settings > General. Remove associations before moving or deleting this copy. Complex SVG requires Microsoft Edge WebView2 Runtime."
+  SaveText (Join-Path $portable 'README-portable.txt') "ShenView $version portable: extract the entire archive before running ShenView.exe. Settings and archive cache are stored in user-data. File associations are optional in Settings > General. Remove associations before moving or deleting this copy. Complex SVG requires Microsoft Edge WebView2 Runtime. This preview is unsigned; Windows may show SmartScreen warnings. Do not disable system security protections. Project license: LICENSE. Third-party notices: codecs/licenses and the application license page. Corresponding source archives, patches and build instructions: https://github.com/xiamibuchi/shen_view/releases/tag/v$version (SOURCES.json and SOURCES.md)."
   $zipName = "ShenView-$fileVersion-windows-x64-portable.zip"
   $exeName = "ShenView-$fileVersion-windows-x64-setup.exe"
   $msixName = "ShenView-$fileVersion-windows-x64.msix"
@@ -159,6 +162,23 @@ try {
   if (Test-Path -LiteralPath $zipPath) { Remove-Item -LiteralPath $zipPath -Force }
   Add-Type -AssemblyName System.IO.Compression.FileSystem
   [IO.Compression.ZipFile]::CreateFromDirectory($portable, $zipPath, [IO.Compression.CompressionLevel]::Optimal, $false)
+  if ($PortableOnly) {
+    $sourceCommit = & git -C $root rev-parse HEAD
+    if ($LASTEXITCODE -ne 0) { throw '无法确定便携包源码提交。' }
+    & git -C $root diff --quiet HEAD --
+    if ($LASTEXITCODE -gt 1) { throw '无法核对源码改动。' }
+    $dirty = $LASTEXITCODE -eq 1 -or @(& git -C $root ls-files --others --exclude-standard).Count -ne 0
+    $zipHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    SaveText (Join-Path $out 'SHA256SUMS.txt') ($zipHash + '  ' + $zipName + [Environment]::NewLine)
+    SaveText (Join-Path $out 'release.json') (@{
+      version = $version; windowsVersion = $fileVersion; architecture = 'x64'; signed = $false
+      package = $zipName; sourceCommit = $sourceCommit; sourceDirty = $dirty; installerType = 'portable'
+      minimumWindowsVersion = $metadata.minimumWindowsVersion
+      webView2RuntimeRequiredForComplexSvg = $true
+    } | ConvertTo-Json -Depth 5)
+    Write-Host "Windows 便携包：$zipPath"
+    return
+  }
 
   $innoArguments = @{PayloadDirectory=$payload; Version=$fileVersion; OutputDirectory=$out; ReleaseBuild=$true; Dart=$dart}
   if ($InnoCompiler) { $innoArguments.Compiler = $InnoCompiler }

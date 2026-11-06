@@ -6,8 +6,9 @@ root=$(cygpath -u "$SHENVIEW_FFMPEG_BUILD_ROOT")
 source_root=$(cygpath -u "$SHENVIEW_FFMPEG_SOURCE")
 compiler_root=$(cygpath -u "$SHENVIEW_FFMPEG_COMPILER")
 for codec_patch in "$script_directory"/patches/*.patch; do
-  if ! patch --batch --dry-run --reverse --silent -d "$source_root" -p1 < "$codec_patch" >/dev/null 2>&1; then
-    patch --batch -d "$source_root" -p1 < "$codec_patch"
+  # Batch mode can silently ignore -R and report an unapplied patch as applied.
+  if ! patch --force --dry-run --reverse --silent -d "$source_root" -p1 < "$codec_patch" >/dev/null 2>&1; then
+    patch --force -d "$source_root" -p1 < "$codec_patch"
   fi
 done
 export PATH="$root/sysroot/usr/bin:$root/sysroot/mingw64/bin:$compiler_root:$PATH"

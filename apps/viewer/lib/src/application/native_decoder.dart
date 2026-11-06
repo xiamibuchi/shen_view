@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:path/path.dart' as paths;
 
 import 'decode_request.dart';
+import 'native_decoder_environment.dart';
 import 'platform_image_decoder.dart';
 import 'raw_developer.dart';
 import 'photo_metadata_reader.dart';
@@ -151,22 +152,12 @@ class NativeDecoder {
           '30',
           ...arguments,
         ],
-        environment: {
-          ...Platform.environment,
-          'MAGICK_CONFIGURE_PATH': paths.dirname(executablePath),
-          if (Platform.isWindows)
-            'MAGICK_CODER_MODULE_PATH': paths.join(
-              paths.dirname(executablePath),
-              'modules',
-              'coders',
-            ),
-          if (Platform.isWindows)
-            'MAGICK_FILTER_MODULE_PATH': paths.join(
-              paths.dirname(executablePath),
-              'modules',
-              'filters',
-            ),
-        },
+        includeParentEnvironment: false,
+        environment: nativeDecoderEnvironment(
+          executablePath,
+          inherited: Platform.environment,
+          isWindows: Platform.isWindows,
+        ),
       );
       cancellation.process = process;
       if (cancellation.cancelled) process.kill();

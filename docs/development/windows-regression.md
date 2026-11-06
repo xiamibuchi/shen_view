@@ -45,6 +45,8 @@ NavigateToLast 用于检查最后一张和胶片栏跟随；SkipNavigation 用�
 部分 Flutter GPU 窗口的 PrintWindow 可能只返回背景，此时可显式使用
 CaptureMethod=desktop，将测试窗口置前并裁取屏幕区域，再查看实际截图及像素结果。
 desktop 模式会短暂改变前台窗口，不能将纯背景捕获直接判作解码失败。
+一键回归也可传 `-CaptureMethod desktop`，对其中所有图片烟测使用同一捕获方式；
+应在可交互且未被其他窗口遮挡的桌面运行，失败截图与像素断言仍需保留。
 
 ## 专项工具
 

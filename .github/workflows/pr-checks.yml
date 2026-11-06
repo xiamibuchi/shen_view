@@ -1,0 +1,103 @@
+name: Pull request checks
+
+on:
+  pull_request:
+    branches: [main, 'release/**']
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: Plan checks
+    runs-on: ubuntu-latest
+    outputs:
+      windows_required: ${{ steps.plan.outputs.windows_required }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: node --test .github/scripts/*.test.cjs
+      - run: node .github/scripts/pr-policy.cjs
+      - id: plan
+        run: node .github/scripts/ci-plan.cjs
+  commits:
+    name: Commit message format (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test commit validator and hooks
+        shell: bash
+        run: sh tool/check/commit_message_test.sh
+      - name: Check PR commits
+        shell: bash
+        env:
+          COMMIT_EVENT_NAME: pull_request
+          COMMIT_PR_BASE: ${{ github.event.pull_request.base.sha }}
+          COMMIT_PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: sh tool/check/commit_message.sh --event
+  quick:
+    name: Quick checks
+    needs: plan
+    if: needs.plan.outputs.windows_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          cache: true
+      - name: Test verified downloads
+        shell: pwsh
+        run: ./tool/check/ffmpeg_download_test.ps1
+      - name: Test release source provenance and downloads
+        shell: pwsh
+        run: ./tool/check/release_sources_test.ps1
+      - name: Test SDK identity and archive validation
+        shell: pwsh
+        run: ./tool/check/native_sdk_test.ps1
+      - name: Generate and check source
+        shell: pwsh
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: ./tool/ci/quick.ps1
+  windows:
+    needs: plan
+    if: needs.plan.outputs.windows_required == 'true'
+    uses: ./.github/workflows/windows-build.yml
+    with:
+      ref: ${{ github.ref }}
+      base-sha: ${{ github.event.pull_request.base.sha }}
+      artifact-name: windows-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
+      static-checked: true
+  gate:
+    name: PR checks
+    if: always()
+    needs: [plan, commits, quick, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Require all checks
+        env:
+          CI_NEEDS: ${{ toJSON(needs) }}
+        run: node .github/scripts/pr-gate.cjs

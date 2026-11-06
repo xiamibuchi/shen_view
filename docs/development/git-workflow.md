@@ -1,6 +1,7 @@
 # Git 工作流
 
 首次配置 hooks 和下载测试资料见[准备仓库](getting-started.md#准备仓库)。本页说明提交格式、文件大小规则及检查工具。
+分支、PR 门禁和便携包发布见[分支与 CI](branches-and-ci.md)。
 
 ## 检查工具环境
 
@@ -27,8 +28,8 @@ LF 和 CRLF。`fixup!`、`squash!` 提交须整理后再提交。
 ### 自动检查
 
 本地 hook 与 GitHub Actions 共用 `tool/check/commit_message.sh`。Actions 在 Windows、
-macOS 和 Linux 上运行测试，并检查 push、PR 中新增的非合并提交，不追溯已有提交。
-新分支与默认分支比较；手动触发时检查 HEAD 相对第一父提交新增的提交。真正的 merge
+macOS 和 Linux 上运行测试，并检查 PR 中新增的非合并提交，不追溯已有提交。
+推送到 PR 后由 PR 工作流统一检查，避免 push 重复运行；手动触发时检查 HEAD 相对第一父提交新增的提交。真正的 merge
 commit 跳过首行格式检查，其包含的普通提交仍会在 Actions 中检查。
 
 ### 验证提交检查工具
@@ -41,7 +42,7 @@ sh tool/check/commit_message.sh --range BASE HEAD
 ```
 
 本地 hook 可被 `--no-verify` 绕过。若需阻止未通过检查的 PR 合并，须在 GitHub 分支规则中
-将三个 `Commit message format` 检查设为必需，并限制直接推送和绕过权限。
+将汇总的 `PR checks` 设为必需，并限制直接推送和绕过权限；它包含三个平台的提交检查。
 
 ## 文件大小与 Git LFS
 
@@ -79,5 +80,5 @@ bash tool/check/staged_files_test.sh
 ```
 
 测试使用临时本地 Git/LFS 仓库，验证提交前拦截、暂存区属性，以及测试资料上传、克隆、
-拉取后的逐字节一致性，不连接 GitHub。当前 Actions 仍只检查提交信息，尚未接入大小
-检查；未来执行图片测试的工作流需在 checkout 中启用 `lfs: true`。
+拉取后的逐字节一致性，不连接 GitHub。Actions 尚未接入大小检查；Windows 图片测试
+工作流已在 checkout 中启用 `lfs: true`。
