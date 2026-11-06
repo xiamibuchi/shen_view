@@ -18,6 +18,14 @@ $duplicate = $lock.assets[0].id
 $lock.assets[0].id = '7zip'
 Reject { Get-ReleaseSourceAssets $lock $dependencies $sdk }
 $lock.assets[0].id = $duplicate
+$url = $lock.assets[0].url
+$lock.assets[0].url = 'https://github.com/upstream/project/releases/download/1.0/source.zip'
+Reject { Get-ReleaseSourceAssets $lock $dependencies $sdk }
+$lock.assets[0].url = $url
+$sdkVersion = $sdk.version
+$sdk.version = '99.0.0'
+Reject { Get-ReleaseSourceAssets $lock $dependencies $sdk }
+$sdk.version = $sdkVersion
 $manifest = [pscustomobject]@{sourceDirty=$false;sourceCommit='commit';installerType='portable';windowsVersion='0.1.0.1';package='ShenView-0.1.0.1-windows-x64-portable.zip'}
 Assert-ReleaseSourceInput $manifest 'commit' $false $manifest.package
 Reject { Assert-ReleaseSourceInput $manifest 'another' $false $manifest.package }

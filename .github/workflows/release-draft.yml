@@ -33,7 +33,7 @@ jobs:
         with:
           name: windows-release-${{ github.run_id }}
           path: artifacts/source-input
-      - name: Collect matching third-party sources and notices
+      - name: Verify fixed source links and collect index and notices
         shell: pwsh
         run: |
           $manifest = @(Get-ChildItem artifacts/source-input -Recurse -Filter release.json)
