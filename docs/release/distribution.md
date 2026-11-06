@@ -6,9 +6,9 @@ macOS 的 DMG、Homebrew Cask 保留在后续范围，尚未实现；不生成 M
 
 EXE 与独立[验证包入口](../../packaging/windows/inno/README.md)共用 Inno 源码。
 0.1.0 预览版采用 Apache-2.0，通过 GitHub Releases 分发未签名 Windows 便携 ZIP；官网和包管理器渠道后续再做。
-未签名状态、下载校验及第三方源码附件见[源码与下载说明](source-delivery.md)。安装器、MSIX 不随便携发布流程自动交付。
+未签名状态、下载校验及第三方固定源码链接见[源码与下载说明](source-delivery.md)。安装器、MSIX 不随便携发布流程自动交付。
 本版 HDR 为实验功能，尚未完成物理 HDR 屏幕、高光、跨屏及恢复验收；软件链路与 SDR 回退结果不替代实屏结论。
-发布前的最终包、源码附件及对外说明清单见[预览版验收](windows-preview-acceptance.md)。安装器 UAC 留待后续安装版验收。
+发布前的最终包、源码链接及对外说明清单见[预览版验收](windows-preview-acceptance.md)。安装器 UAC 留待后续安装版验收。
 Inno 验证包将主程序直接放在安装根目录，使用单一 uninstall.exe 卸载入口；支持旧预览 app/ 结构转换和显式完全卸载。
 新安装不生成 install.ini，安装状态使用 Windows 卸载记录；恢复副本集中在受限的 ProgramData/ShenView/Installer/Transactions 临时目录。
 Windows 运行包按加载边界组织组件：ImageMagick 及共享 HEIF 读取器位于 codecs/imagemagick/，压缩包引擎位于 codecs/archive/；核心启动 DLL 保留在应用根目录。

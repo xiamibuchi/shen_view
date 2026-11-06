@@ -1,11 +1,12 @@
 {
-  "schema": 1,
+  "schema": 2,
   "assets": [
     {
       "id": "imagemagick-windows",
       "input": "artifacts.imageMagickWindows.sha256",
       "binarySha256": "eb32ded8b605795dfcb08b8cadbeef6732fe2252af933b54b38df586332e1007",
-      "url": "https://github.com/ImageMagick/ImageMagick/releases/download/7.1.2-34/ImageMagick-7.1.2-34-Windows.7z",
+      "url": "https://github.com/xiamibuchi/shen_view/releases/download/third-party-sources-v1/ImageMagick-7.1.2-34-Windows.7z",
+      "upstreamUrl": "https://github.com/ImageMagick/ImageMagick/releases/download/7.1.2-34/ImageMagick-7.1.2-34-Windows.7z",
       "sha256": "e574618679e1d792b903979d52e5cf309ad24c24595cac7e29d4b30eb7707d4b",
       "bytes": 767686970
     },
@@ -13,8 +14,10 @@
       "id": "7zip",
       "input": "artifacts.sevenZipWindows.sha256",
       "binarySha256": "fd99e86f57d8f429ef5ed045bf98315af962e2309b0f1ba87a147a44c71647d0",
-      "url": "https://github.com/ip7z/7zip/releases/download/26.05/7z2605-src.tar.xz",
-      "sha256": "0b6080b8c3e7a579161d2d495224c0e51c467576cb4c7048b0ab485ef44cc22e"
+      "url": "https://github.com/xiamibuchi/shen_view/releases/download/third-party-sources-v1/7z2605-src.tar.xz",
+      "upstreamUrl": "https://github.com/ip7z/7zip/releases/download/26.05/7z2605-src.tar.xz",
+      "sha256": "0b6080b8c3e7a579161d2d495224c0e51c467576cb4c7048b0ab485ef44cc22e",
+      "bytes": 1565688
     },
     {
       "id": "hdr-sdk",

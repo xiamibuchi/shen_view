@@ -37,5 +37,5 @@ Windows 完整分发继续运行 tool/build/package_windows_codecs.ps1；它将�
 macOS 的 archive/SVG 构建脚本将已打包组件的许可放在 Contents/MacOS/codecs/licenses。
 新增原生组件时，必须在对应构建流程收集实际分发版本的许可；列表会随目录内容更新。
 
-公开发布时另提供与实际应用 ZIP 绑定的[对应源码附件](source-delivery.md)，包括上游覆盖代码、
+公开发布时另提供与实际应用 ZIP 绑定的[对应源码索引和固定链接](source-delivery.md)，包括上游覆盖代码、
 修改与构建资料。源码锁按二进制哈希匹配；更新依赖时同时更新，不能仅提供上游主页或本地相对路径。
