@@ -7,7 +7,8 @@ main 保存已交付基线，release/<major.minor.patch> 承接一个 Milestone 
 
 1. 从目标 release 分支创建 feat/、fix/、build/、ci/ 等工作分支。
 2. PR 指向该 release 分支，标题使用 Conventional Commits；普通提交也遵循现有格式。
-3. PR checks 通过、讨论解决后 squash merge，合并标题使用 PR 标题。
+3. PR checks 通过、讨论解决后通常 squash merge，合并标题使用 PR 标题。
+   版本已合入 main、但尚未公开时，后续工作分支先合并 main；该工作 PR 使用 merge commit 保留同步历史，避免下一次发布 PR 落后于 main。
 4. 版本验收完成后，从 release 分支向 main 创建发布 PR，使用 merge commit 合并。
 5. 发布完成后，从最新 main 创建下一版本分支，在工作分支中修改 pubspec.yaml，再通过 PR 合入。
 
