@@ -1,7 +1,7 @@
 # 分支、检查与版本发布
 
 main 保存已交付基线，release/<major.minor.patch> 承接一个 Milestone 的开发。
-当前版本使用 release/0.1.0，不另设 develop。main 与 release/* 都要求通过 PR 合并。
+当前开发版本使用 release/0.2.0，不另设 develop。main 与 release/* 都要求通过 PR 合并。
 
 ## 日常开发
 
