@@ -35,6 +35,8 @@ powershell -ExecutionPolicy Bypass -File tool/release/package_windows.ps1 -Unsig
 | channel-templates/scoop/ | 引用 ZIP、持久化 user-data 的模板 |
 | SHA256SUMS.txt、release.json | 最终文件哈希、版本与打包信息 |
 
+独立便携发布仅包含 ZIP，用同名 .zip.sha256 替代聚合 SHA256SUMS.txt；完整安装器打包仍使用上表的聚合校验文件。
+
 已有最新 Flutter Release 和原生组件时可用 -SkipBuild -SkipCodecs；这两个参数不会检查
 输入是否对应最新源码，正式发布应运行完整打包。-Flutter、-InnoCompiler、-WindowsSdkBin、
 -RuntimeDirectory 可指定本机工具路径。生成配置和暂存文件位于 build/packaging/。

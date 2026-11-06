@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [Parameter(Mandatory)][string]$ReleaseDirectory,
   [string]$OutputDirectory = '',
@@ -17,7 +17,7 @@ if ($LASTEXITCODE) { throw 'Cannot read source status' }
 $package = Join-Path $release $manifest.package
 Assert-ReleaseSourceInput $manifest $commit ($status.Count -ne 0) $package
 $packageHash = (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash.ToLowerInvariant()
-if ((Get-Content -LiteralPath (Join-Path $release 'SHA256SUMS.txt') -Raw).Trim() -cne "$packageHash  $($manifest.package)") {
+if ((Get-Content -LiteralPath (Join-Path $release ($manifest.package + '.sha256')) -Raw).Trim() -cne "$packageHash  $($manifest.package)") {
   throw 'Portable package checksum mismatch'
 }
 $dependencies = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'third_party/dependencies.lock.json') -Raw | ConvertFrom-Json
