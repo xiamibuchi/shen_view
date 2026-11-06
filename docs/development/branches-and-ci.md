@@ -7,7 +7,8 @@ main 保存已交付基线，release/<major.minor.patch> 承接一个 Milestone 
 
 1. 从目标 release 分支创建 feat/、fix/、build/、ci/ 等工作分支。
 2. PR 指向该 release 分支，标题使用 Conventional Commits；普通提交也遵循现有格式。
-3. PR checks 通过、讨论解决后 squash merge，合并标题使用 PR 标题。
+3. PR checks 通过、讨论解决后通常 squash merge，合并标题使用 PR 标题。
+   版本已合入 main、但尚未公开时，后续工作分支先合并 main；该工作 PR 使用 merge commit 保留同步历史，避免下一次发布 PR 落后于 main。
 4. 版本验收完成后，从 release 分支向 main 创建发布 PR，使用 merge commit 合并。
 5. 发布完成后，从最新 main 创建下一版本分支，在工作分支中修改 pubspec.yaml，再通过 PR 合入。
 
@@ -101,15 +102,17 @@ release 分支的发布 PR 合入 main 后，Draft Windows release 对 merge_com
 同一套检查和打包。它不复用 PR artifact，也不因关闭未合并的 PR 而发包。
 创建草稿的 job 才有 contents: write，检查构建 job 保持只读权限。
 
-草稿固定目标 SHA，附便携 ZIP、SHA256SUMS.txt、release.json，以及 SOURCES.json 列出的完整
-第三方和 ShenView 源码、许可附件与单独的源码校验文件，标记为 unsigned preview。
+草稿固定目标 SHA，附便携 ZIP、SHA256SUMS.txt、release.json、许可快照、SOURCES.json 和索引校验文件，
+标记为 unsigned preview。ShenView 源码链接准确提交，SDK 与第三方源码复用本仓库已公开的固定源码 Release。
+发布流程下载并核对远程源码哈希、归档及版本对应关系，上传前再核对源码提交和远程附件摘要，不重复上传大源码包。
 不自动公开、不自动将构建号提交回仓库，不借助工作流创建的 tag 触发第二个工作流。
-同一 SHA 的草稿可重跑更新；已有公开 Release、不同 SHA 的草稿或冲突 tag 均拒绝覆盖。
+同一 SHA 的草稿可重跑更新；未打 Tag 的草稿可推进到当前 main 的后续合并提交，必须由 GitHub 比较确认祖先关系。
+已有公开 Release、冲突 Tag、无关提交或非当前 main 的候选均拒绝覆盖。更新后清理旧方案的生成附件，保留维护者额外附件和说明。
 若发布失败，重跑原始工作流；更改已合并代码仍必须通过新的版本 PR。
 
-公开前需人工完成发布说明、最低 Windows/干净环境、HDR 实屏及第三方许可与对应源码交付。
+公开前需人工完成发布说明、最终便携包/干净环境及第三方许可与对应源码链接核对；HDR 实屏依照当前验收范围保持待验并披露实验状态。
 GitHub 自动源码 ZIP 和便携 ZIP 均不能替代完整第三方源码交付；独立 sources job 仅在发布构建后
-收集并验证同版本大附件，不加入每次 PR 的下载。缺失、损坏或不匹配包哈希的源码附件会阻止创建草稿。
+收集并验证固定源码归档，不加入每次 PR 的下载。缺失、损坏、失效链接或不匹配包哈希的索引会阻止创建草稿。
 下载和未签名发布说明见[源码与下载](../release/source-delivery.md)。
 验收未完成时保留草稿；签名、Inno/MSIX/macOS 分发不在这条便携流水线范围。
 首次将流水线合入版本分支不会创建 Release，只有其后向 main 合并发布 PR 才触发。

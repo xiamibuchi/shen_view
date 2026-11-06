@@ -9,7 +9,7 @@ function Get-ReleaseSourceTextHash {
 function Get-ReleaseSourceAssets {
   param($SourceLock, $Dependencies, $SdkLock)
   $ids = @('imagemagick-windows', '7zip', 'hdr-sdk', 'ffmpeg-sdk')
-  if ($SourceLock.schema -ne 1 -or $SourceLock.assets.Count -ne $ids.Count) { throw 'Invalid release source lock' }
+  if ($SourceLock.schema -ne 2 -or $SourceLock.assets.Count -ne $ids.Count) { throw 'Invalid release source lock' }
   foreach ($id in $ids) {
     $asset = @($SourceLock.assets | Where-Object { $_.id -ceq $id })
     if ($asset.Count -ne 1) { throw "Missing or duplicate source: $id" }
@@ -21,7 +21,9 @@ function Get-ReleaseSourceAssets {
     }
     if ($inputObject -ne $asset.binarySha256) { throw "Source lock is stale for binary: $id" }
     if ($id -eq '7zip' -and $Dependencies.sources.viewer_7zip.sha256 -ne $asset.sha256) { throw '7-Zip helper headers and engine source differ' }
-    if ($asset.sha256 -cnotmatch '^[a-f0-9]{64}$' -or $asset.url -cnotmatch '^https://github.com/[^/]+/[^/]+/releases/download/[^/]+/[^/]+$') {
+    $tag = if ($id.EndsWith('-sdk')) { 'native-sdk-v' + [regex]::Escape($SdkLock.version) } else { 'third-party-sources-v[1-9][0-9]*' }
+    if ($asset.sha256 -cnotmatch '^[a-f0-9]{64}$' -or $asset.bytes -le 0 -or
+        $asset.url -cnotmatch ('^https://github.com/xiamibuchi/shen_view/releases/download/' + $tag + '/[A-Za-z0-9_.-]+$')) {
       throw "Invalid source URL or hash: $id"
     }
     $asset
