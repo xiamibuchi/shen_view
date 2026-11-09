@@ -1,7 +1,7 @@
 # 分支、检查与版本发布
 
 main 保存已交付基线，release/<major.minor.patch> 承接一个 Milestone 的开发。
-当前版本使用 release/0.1.0，不另设 develop。main 与 release/* 都要求通过 PR 合并。
+当前版本使用 release/0.2.0，不另设 develop。main 与 release/* 都要求通过 PR 合并。
 
 ## 日常开发
 
@@ -27,10 +27,10 @@ GitHub ruleset 对 main 与 release/* 强制 PR、PR checks 与 PR policy 成功
 规则启用前先运行首个 PR，确认检查名称和 runner 可用；将 GitHub Actions 设为该检查的预期提供方。
 不要求线性历史，因为版本 PR 使用 merge commit。版本分支不自动删除，工作分支合并后可手动清理。
 
-## PR 检查与便携包
+## PR 检查与构建产物
 
 Pull request checks 对 main、release/* 的 PR 执行。工作流始终启动，内部仅允许
-README.md、docs/ 下普通 Markdown 说明跳过 Windows；混合改动、空差异和未识别路径完整执行。
+README.md、docs/ 下普通 Markdown 说明跳过 Windows 和 macOS 构建；混合改动、空差异和未识别路径完整执行。
 重命名同时检查旧、新路径，避免源文件移入 docs 后漏检。
 
 - PR policy 检查标题、目标版本和 Windows 可表示的版本范围。main 只接受同仓库的匹配版本分支。
@@ -48,8 +48,13 @@ README.md、docs/ 下普通 Markdown 说明跳过 Windows；混合改动、空�
 - 完整测试前单独解码 Dolby Vision 样本；原生失败日志保留 Vulkan 与解码阶段错误。
 - 执行原生队列测试，生成 unsigned Windows x64 portable ZIP，解压后检查版本、哈希、
   许可、便携标记和空用户目录，并在仅系统 PATH 下运行随包解码样本。
+- macOS 使用 macos-15-arm64、Flutter 3.47.9 和 Xcode 构建 arm64 Release。Homebrew 提供构建依赖，
+  FFmpeg/FFprobe 从锁定源码编译；构建记录保存 Xcode、CMake 和 Homebrew 包版本。
+  使用包内 FFmpeg、FFprobe、ImageMagick 执行完整 Flutter 测试和照片媒体、查看器实机集成测试。
+- macOS CI 用 ditto 生成保留应用签名和符号链接的 ZIP，解压后复核签名、最低系统版本、
+  arm64 架构及组件清单哈希。ZIP 和 SHA256SUMS.txt 保留 14 天，属于 ad-hoc 签名测试包。
 - PR checks 汇总，代码检查失败、取消或意外跳过均不能合并；仅允许计划明确批准的文档跳过。
-- 构建各阶段耗时写入 Actions 摘要和 artifacts/ci/windows-timings.jsonl。
+- Windows 构建各阶段耗时写入 Actions 摘要和 artifacts/ci/windows-timings.jsonl。
 
 Windows runner 使用 windows-2025；Flutter 和 Actions 固定版本/提交，第三方构建输入按锁文件校验。
 MSYS2 安装前更新软件包数据库与基础工具；GCC、Mesa 和托管 runner 工具随供应方更新，
@@ -78,8 +83,9 @@ Actions 中删除；本次运行仍从源码重建。缓存不是源码或发布
 PR 代码在无发布密钥、contents: read 的托管 runner 执行，不使用 pull_request_target 构建 PR。
 fork 首次工作流可能需要 GitHub 的运行批准。
 
-每个 PR 的便携包 artifact 名含 PR 编号和 run ID，保留 14 天。它是测试包，不代表发布通过。
-诊断 artifact 另含日志、源码 SHA、工具链版本及 FFmpeg/helper 运行组件，便于复现云端原生错误。
+每个 PR 的 Windows 便携包和 macOS 应用 ZIP artifact 名含 PR 编号和 run ID，保留 14 天。
+它们是测试包，不代表发布通过。诊断 artifact 另含日志、源码 SHA、工具链版本，
+便于复现云端原生错误。
 
 本地入口：
 
@@ -87,6 +93,9 @@ fork 首次工作流可能需要 GitHub 的运行批准。
 powershell -ExecutionPolicy Bypass -File tool/ci/windows.ps1
 powershell -ExecutionPolicy Bypass -File tool/release/package_windows_portable.ps1
 ~~~
+
+macOS Release 构建后从仓库根目录运行 `bash tool/ci/package_macos.sh`，
+产物位于 `artifacts/releases/<版本.构建号>/macos-arm64/zip-ci/`。
 
 独立便携入口复用完整打包脚本的载荷准备逻辑，但不生成 Inno、MSIX 或渠道清单，
 不需要安装器编译器、MSIX 工具或证书。首次执行仍需要开发入门列出的构建工具。
