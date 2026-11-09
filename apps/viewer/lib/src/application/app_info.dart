@@ -6,7 +6,7 @@ import 'dart:io';
 abstract final class AppInfo {
   static const chineseName = '神羊看图';
   static const englishName = 'ShenView';
-  static const version = '0.1.0';
+  static const version = '0.2.0';
   static const buildNumber = 1;
 
   static String localizedName(String languageCode) =>
