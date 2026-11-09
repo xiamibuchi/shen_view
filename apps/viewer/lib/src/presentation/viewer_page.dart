@@ -2842,6 +2842,7 @@ class _ViewerPageState extends State<ViewerPage>
                               shortcut,
                               AppTextStyles.label,
                             ) +
+                            AppTokens.space2 +
                             (showSelectionIndicator
                                 ? AppTokens.menuIconSize + AppTokens.space2
                                 : 0),

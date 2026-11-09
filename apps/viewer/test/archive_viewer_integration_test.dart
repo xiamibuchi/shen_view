@@ -2310,12 +2310,10 @@ void main() {
         'viewer-directory-panel-',
       );
       addTearDown(() => _deleteFixture(directory));
+      final source = _navigationArchive(directory);
       await _pumpArchiveHost(
         tester,
-        _host(
-          _navigationArchive(directory),
-          settings: const ViewerSettings(pinDirectoryPanel: true),
-        ),
+        _host(source, settings: const ViewerSettings(pinDirectoryPanel: true)),
       );
       await _waitForSelectedImage(tester);
       final controller = _bar(tester)!.controller;
@@ -2390,8 +2388,7 @@ void main() {
       await tester.pump();
       expect(find.byKey(const ValueKey('directory.panel')), findsNothing);
       expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox());
-      await _drain(tester);
+      await _finishViewer(tester, source);
     },
   );
 

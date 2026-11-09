@@ -40,11 +40,14 @@ Windows 构建入口自动编译 helper，manifest.json 的 workerIdentity 单�
 其他平台可用 native/hdr_video/CMakeLists.txt 对接 pkg-config 中匹配的 FFmpeg 9 /
 libplacebo 7.387 组件；macOS 仍需完成下述依赖封装、签名和 Vulkan 实机验收。
 
-macOS 的音频输出接口使用 AVAudioEngine，定位器预留 Contents/Helpers/ffmpeg 和
-ffprobe。当前自动构建、依赖锁定及打包产物仅验证 Windows x64，不能直接使用 Windows
-DLL 作为 macOS 组件。macOS 分发需要另外锁定对应架构的依赖，按同一 profile 从源码
-构建 dylib，收集依赖并修正 rpath，随应用签名、公证；libplacebo 的 Vulkan 路径还需
-验证 MoltenVK。未完成这些步骤前，macOS 仍依赖显式配置的开发组件，不视为发布完成。
+macOS 的音频输出接口使用 AVAudioEngine。Release 构建使用
+`tool/build/build_ffmpeg_macos.sh` 按同一 profile 从锁定的 FFmpeg 9.0.2 源码
+编译 FFmpeg/FFprobe，`tool/build/bundle_macos_codecs.py` 递归收集动态库、
+改写 Mach-O 引用并逐项签名。组件位于 `Contents/MacOS/codecs/ffmpeg/`，
+依赖库位于 `Contents/MacOS/codecs/lib/`。打包验证拒绝缺少架构切片、
+高于应用目标版本的依赖，以及残留的 Homebrew 动态库引用。FFmpeg 源码被锁定，
+构建机提供的其他动态依赖仍需按目标架构和最低系统版本准备。正式分发还需
+补全这些依赖的许可证、签署与公证，并验收 libplacebo 的 MoltenVK 路径。
 
 已知边界：不是所有 HEIF 文件内的多张图片都有时间轴；只有时序轨才作为动画。
 辅助轨依据 auxl/thmb 引用和 auxi 类型区分，透明度序列才与主序列合成；深度图不播放。

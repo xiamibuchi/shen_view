@@ -59,6 +59,8 @@ flutter run -d windows
 
 ### macOS
 
+macOS 0.2 的目标为 macOS 15 及以上、Apple 芯片（arm64）；不构建 Intel 版本。
+
 先按[归档 helper](../../native/archive_helper/README.md)、[SVG 构建](../architecture/svg-rendering.md#构建与运行)
 和 [HDR 构建](../../native/hdr_codecs/README.md)准备原生组件，然后在 `apps/viewer/` 中运行：
 
@@ -67,7 +69,18 @@ flutter pub get
 flutter run -d macos
 ```
 
-macOS 实机验证尚未完成。
+照片视频和 HEIF 时序媒体测试需要 FFmpeg 9.0.2，并包含 zscale、libplacebo 滤镜。
+可用 `SHENVIEW_FFMPEG`、`SHENVIEW_FFPROBE` 指向本机完整构建；开发环境也会查找
+Homebrew 的 `ffmpeg-full`。Release 构建使用
+`tool/build/build_ffmpeg_macos.sh` 从锁定源码编译精简播放组件，
+`tool/build/bundle_macos_codecs.sh` 将 FFmpeg、ImageMagick、动态库及解码模块
+复制进应用并签名；不会复制 Homebrew 的完整 FFmpeg 可执行文件。
+构建机需要 `pkgconf`、`dav1d`、`zimg`、`libplacebo`、
+`vulkan-loader` 和 `imagemagick-full`。打包时会检查每个组件的 CPU 架构和
+最低 macOS 版本；依赖不覆盖目标平台时构建失败。
+构建约束见 [FFmpeg 播放组件](../../third_party/ffmpeg/README.md)。
+
+macOS 完整功能与打包验收仍在进行。
 
 ### 编辑器
 

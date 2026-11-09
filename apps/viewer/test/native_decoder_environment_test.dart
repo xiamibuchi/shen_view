@@ -82,4 +82,21 @@ void main() {
       );
     }
   });
+
+  test('macOS bundled ImageMagick uses bundled modules and configuration', () {
+    final environment = nativeDecoderEnvironment(
+      '/Applications/ShenView.app/Contents/MacOS/codecs/imagemagick/magick',
+      inherited: {'PATH': '/usr/bin:/bin'},
+      isWindows: false,
+    );
+    expect(environment['PATH'], '/usr/bin:/bin');
+    expect(
+      environment['MAGICK_CONFIGURE_PATH'],
+      '/Applications/ShenView.app/Contents/Resources/codecs/imagemagick',
+    );
+    expect(
+      environment['MAGICK_CODER_MODULE_PATH'],
+      '/Applications/ShenView.app/Contents/Resources/codecs/imagemagick/modules/coders',
+    );
+  });
 }

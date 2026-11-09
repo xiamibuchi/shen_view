@@ -60,38 +60,44 @@ void main() {
             }
           });
           final path = '${dir.path}/photo.jpg';
+          // This layout fixture must decode without the optional Adobe RGB backend.
+          final photo = metadataPhoto()
+            ..exif.exifIfd[0xa001] = img.IfdValueShort(1);
           File(path).writeAsBytesSync(
             jpegWithXmp(
-              img.encodeJpg(metadataPhoto()),
+              img.encodeJpg(photo),
               photoXmp(title: '旅行相册：海边与山间的光影 café'),
             ),
           );
           File('${dir.path}/plain.png')
               .writeAsBytesSync(img.encodePng(img.Image(width: 16, height: 8)));
-          await tester.pumpWidget(
-            RepaintBoundary(
-              key: _captureKey,
-              child: MaterialApp(
-                debugShowCheckedModeBanner: false,
-                theme: dark
-                    ? AppTheme.dark(platform: TargetPlatform.windows)
-                    : AppTheme.light(platform: TargetPlatform.windows),
-                locale: const Locale('zh'),
-                supportedLocales: AppLocalizations.supportedLocales,
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
-                builder: (context, child) => MediaQuery(
-                  data: MediaQuery.of(context)
-                      .copyWith(textScaler: TextScaler.linear(scale)),
-                  child: child!,
-                ),
-                home: ViewerPage(
-                  initialPath: path,
-                  initialSettings: const ViewerSettings(
-                    showDirectoryPanel: false,
-                    watchFolderChanges: false,
+          await tester.runAsync(
+            () => tester.pumpWidget(
+              RepaintBoundary(
+                key: _captureKey,
+                child: MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  theme: dark
+                      ? AppTheme.dark(platform: TargetPlatform.windows)
+                      : AppTheme.light(platform: TargetPlatform.windows),
+                  locale: const Locale('zh'),
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
+                  builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(context)
+                        .copyWith(textScaler: TextScaler.linear(scale)),
+                    child: child!,
                   ),
-                  configStore: AppConfigStore(
-                    filePath: '${dir.path}/settings.json',
+                  home: ViewerPage(
+                    initialPath: path,
+                    initialSettings: const ViewerSettings(
+                      showDirectoryPanel: false,
+                      watchFolderChanges: false,
+                    ),
+                    configStore: AppConfigStore(
+                      filePath: '${dir.path}/settings.json',
+                    ),
                   ),
                 ),
               ),

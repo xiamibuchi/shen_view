@@ -1478,6 +1478,17 @@ class ImageResourceService {
               route != ImageDecodeRoute.imageMagick &&
               usePlatform)
             DecodeBackend('平台解码', platform),
+          if (entry.format == ImageFormat.avif && !animated)
+            DecodeBackend(
+              'AVIF 解码',
+              () => AvifCodec.open(
+                path,
+                maxPixels: maxDecodedPixels,
+                targetWidth: key.targetWidth,
+                targetHeight: key.targetHeight,
+                request: request,
+              ),
+            ),
           if ((!animated || thumbnail) || route != ImageDecodeRoute.flutter)
             DecodeBackend('兼容解码', compatible),
         ],

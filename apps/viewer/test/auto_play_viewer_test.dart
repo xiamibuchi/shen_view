@@ -229,6 +229,11 @@ void main() {
           );
           await _frames(tester, 4);
         }
+        await _wait(
+          tester,
+          () => viewport.positionController?.layoutReady ?? false,
+          attempts: 750,
+        );
         await _start(tester);
         final before = viewport.controller.value.getTranslation();
         await _frames(tester, 10);
@@ -575,8 +580,12 @@ Future<void> _frames(WidgetTester tester, int count) async {
   }
 }
 
-Future<void> _wait(WidgetTester tester, bool Function() ready) async {
-  for (var i = 0; i < 100; i++) {
+Future<void> _wait(
+  WidgetTester tester,
+  bool Function() ready, {
+  int attempts = 100,
+}) async {
+  for (var i = 0; i < attempts; i++) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 15)),
     );

@@ -480,23 +480,25 @@ Future<void> _open(
   final theme = dark
       ? AppTheme.dark(platform: platform)
       : AppTheme.light(platform: platform);
-  await tester.pumpWidget(
-    RepaintBoundary(
-      key: _capture,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        locale: const Locale('zh'),
-        supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        theme: theme,
-        home: ViewerPage(
-          key: ValueKey(path),
-          initialPath: path,
-          initialSettings: settings,
-          configStore: AppConfigStore(filePath: '${dir.path}/config.json'),
-          archiveService: ArchiveService(
-            cachePolicy: ArchiveCachePolicy(
-              directory: Directory('${dir.path}/cache'),
+  await tester.runAsync(
+    () => tester.pumpWidget(
+      RepaintBoundary(
+        key: _capture,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          locale: const Locale('zh'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          theme: theme,
+          home: ViewerPage(
+            key: ValueKey(path),
+            initialPath: path,
+            initialSettings: settings,
+            configStore: AppConfigStore(filePath: '${dir.path}/config.json'),
+            archiveService: ArchiveService(
+              cachePolicy: ArchiveCachePolicy(
+                directory: Directory('${dir.path}/cache'),
+              ),
             ),
           ),
         ),

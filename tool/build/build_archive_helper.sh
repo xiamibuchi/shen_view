@@ -9,7 +9,7 @@ root="$repository_root"
 architectures=$(printf '%s' "${ARCHS:-$(uname -m)}" | tr ' ' ';')
 cmake -S "$root/native/archive_helper" -B "$root/build/archive-helper" \
   -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=$architectures" \
-  "-DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-11.0}"
+  "-DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-15.0}"
 cmake --build "$root/build/archive-helper" --config Release --parallel 2
 if [ "${1:-}" != "" ]; then
   # Pass e.g. build/macos/Build/Products/Release/ShenView.app.

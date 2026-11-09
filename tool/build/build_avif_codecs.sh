@@ -10,7 +10,7 @@ architectures=$(printf '%s' "${ARCHS:-$(uname -m)}" | tr ' ' ';')
 cmake -S "$root/native/hdr_codecs" -B "$root/build/avif-codecs" \
   -DSHENVIEW_AVIF_ONLY=ON -DCMAKE_BUILD_TYPE=Release \
   "-DCMAKE_OSX_ARCHITECTURES=$architectures" \
-  "-DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-11.0}"
+  "-DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-15.0}"
 cmake --build "$root/build/avif-codecs" --config Release --target viewer_avif_animation --parallel 2
 destination="$1/Contents/MacOS/codecs"
 mkdir -p "$destination"

@@ -407,7 +407,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$PROJECT_DIR/../../../tool/build/build_svg_codecs.sh\" \"$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME\"\n/bin/sh \"$PROJECT_DIR/../../../tool/build/build_avif_codecs.sh\" \"$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME\"\n";
+			shellScript = "/bin/sh \"$PROJECT_DIR/../../../tool/build/build_svg_codecs.sh\" \"$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME\"\n/bin/sh \"$PROJECT_DIR/../../../tool/build/build_avif_codecs.sh\" \"$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME\"\n/bin/sh \"$PROJECT_DIR/../../../tool/build/bundle_macos_codecs.sh\" \"$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME\"\n";
 		};
 		D1A5C099C252B2434005C20C /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -614,7 +614,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				ARCHS = arm64;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -696,7 +697,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				ARCHS = arm64;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -746,7 +748,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				ARCHS = arm64;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;

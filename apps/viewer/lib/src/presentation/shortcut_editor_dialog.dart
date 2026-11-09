@@ -69,6 +69,7 @@ class _ShortcutEditorDialogState extends State<ShortcutEditorDialog> {
             'Already used by “${widget.commandLabel(conflict)}”. Choose another key.',
           );
     return AppDialog(
+      maxWidth: 500,
       title: _copy('修改快捷键', 'Edit shortcut'),
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -162,9 +163,8 @@ class _ShortcutEditorDialogState extends State<ShortcutEditorDialog> {
             ),
           ),
           const SizedBox(height: AppTokens.space3),
-          Wrap(
-            spacing: AppTokens.space5,
-            runSpacing: AppTokens.space2,
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               AppTextAction(
                 key: const ValueKey('shortcuts.restoreOne'),
@@ -177,6 +177,7 @@ class _ShortcutEditorDialogState extends State<ShortcutEditorDialog> {
                   );
                 }),
               ),
+              const SizedBox(width: AppTokens.space5),
               AppTextAction(
                 key: const ValueKey('shortcuts.clearOne'),
                 label: _copy('清除快捷键', 'Clear shortcut'),
