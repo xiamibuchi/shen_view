@@ -115,6 +115,27 @@ void main() {
       await Future.wait(values.map((worker) => worker.finish()));
     }
 
+    test('worker barrier waits for a transient Windows sharing lock', () async {
+      final worker = await start({'operation': 'increment', 'count': 1});
+      final guard = WindowsReplaceGuard(worker.path('ready'), denyRead: true);
+      addTearDown(guard.close);
+      await expectLater(
+        worker.read('ready'),
+        throwsA(isA<FileSystemException>()),
+      );
+      final release = Future<void>.delayed(
+        const Duration(milliseconds: 100),
+        guard.close,
+      );
+      try {
+        expect((await worker.waitFor('ready'))['pid'], worker.process.pid);
+      } finally {
+        await release;
+      }
+      await signal(file('go'));
+      await worker.finish();
+    });
+
     void expectPreserved(Map<String, dynamic> value) {
       expect(value['sentinel'], 'preserve');
       expect(value['payload'], payload);
@@ -598,14 +619,21 @@ class _Worker {
 
   Future<Map<String, dynamic>> waitFor(String name) async {
     final deadline = DateTime.now().add(const Duration(seconds: 30));
-    while (!await File(path(name)).exists()) {
+    while (true) {
+      if (await File(path(name)).exists()) {
+        try {
+          return await read(name);
+        } on FileSystemException catch (error) {
+          // Windows can briefly retain a sharing lock after publishing a barrier.
+          if (!const {32, 33}.contains(error.osError?.errorCode)) rethrow;
+        }
+      }
       if (exited) fail('Worker exited before $name: ${await errors}');
       if (DateTime.now().isAfter(deadline)) {
         fail('Worker barrier timed out: $name ($job)');
       }
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
-    return read(name);
   }
 
   Future<Map<String, dynamic>> finish() async {

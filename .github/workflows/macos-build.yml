@@ -19,7 +19,7 @@ permissions:
 jobs:
   macos:
     name: macOS Release and app tests
-    runs-on: macos-15-arm64
+    runs-on: macos-15
     timeout-minutes: 120
     defaults:
       run:

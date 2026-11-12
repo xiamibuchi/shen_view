@@ -48,7 +48,7 @@ README.md、docs/ 下普通 Markdown 说明跳过 Windows 和 macOS 构建；混
 - 完整测试前单独解码 Dolby Vision 样本；原生失败日志保留 Vulkan 与解码阶段错误。
 - 执行原生队列测试，生成 unsigned Windows x64 portable ZIP，解压后检查版本、哈希、
   许可、便携标记和空用户目录，并在仅系统 PATH 下运行随包解码样本。
-- macOS 使用 macos-15-arm64、Flutter 3.47.9 和 Xcode 构建 arm64 Release。Homebrew 提供构建依赖，
+- macOS 使用 macos-15（arm64）、Flutter 3.47.9 和 Xcode 构建 arm64 Release。Homebrew 提供构建依赖，
   FFmpeg/FFprobe 从锁定源码编译；构建记录保存 Xcode、CMake 和 Homebrew 包版本。
   使用包内 FFmpeg、FFprobe、ImageMagick 执行完整 Flutter 测试和照片媒体、查看器实机集成测试。
 - macOS CI 用 ditto 生成保留应用签名和符号链接的 ZIP，解压后复核签名、最低系统版本、
