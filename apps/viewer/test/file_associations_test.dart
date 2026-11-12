@@ -175,6 +175,7 @@ void main() {
       expect(calls.where((call) => call.method == 'read'), isNotEmpty);
       expect(changes, 0);
     },
+    skip: !Platform.isWindows,
   );
 
   testWidgets(

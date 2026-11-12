@@ -22,7 +22,7 @@ ShenView 正在开发中，暂未提供正式下载。可按[开发环境](docs/
 | 平台 | 状态 |
 | --- | --- |
 | Windows | Windows 10 2004 及以上，x64。 |
-| macOS | 开发中，实机验证待完成。 |
+| macOS | macOS 15 及以上，仅支持 Apple 芯片（arm64）；仍在开发中。不支持 Intel Mac。 |
 | Linux | 暂不支持。 |
 
 ## 文档

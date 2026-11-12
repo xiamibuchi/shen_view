@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       windows_required: ${{ steps.plan.outputs.windows_required }}
+      macos_required: ${{ steps.plan.outputs.macos_required }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -88,10 +89,18 @@ jobs:
       base-sha: ${{ github.event.pull_request.base.sha }}
       artifact-name: windows-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
       static-checked: true
+  macos:
+    needs: plan
+    if: needs.plan.outputs.macos_required == 'true'
+    uses: ./.github/workflows/macos-build.yml
+    with:
+      ref: ${{ github.ref }}
+      artifact-name: macos-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
+      static-checked: true
   gate:
     name: PR checks
     if: always()
-    needs: [plan, commits, quick, windows]
+    needs: [plan, commits, quick, windows, macos]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

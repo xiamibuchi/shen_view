@@ -6,7 +6,8 @@
 ## 收集来源
 
 - Flutter、Dart 包和 Flutter 引擎内嵌组件：读取 Flutter 打包的 NOTICES，经 LicenseRegistry 提供。
-- 原生组件：读取可执行文件旁的 codecs/licenses；Windows 和 macOS 的已有打包位置一致。
+- 原生组件：Windows 读取可执行文件旁的 codecs/licenses；macOS 读取
+  Contents/Resources/codecs/licenses。
 - 7zip、resvg 按目录聚合；hdr 下按组件文件名前缀分组。
 - ImageMagick 的 NOTICE 按原有组件标题分节，保留节内全文及可能存在的前言，使 libheif、
   libde265 等委托解码库可搜索。无法识别分节时保留整份文件。
@@ -34,7 +35,8 @@ dart run tool/generate_license_exclusions.dart
 
 Windows 完整分发继续运行 tool/build/package_windows_codecs.ps1；它将原生许可目录和程序一起
 放到 Release/codecs。HDR CMake 同时收集 libaom 的 LICENSE 和 PATENTS。
-macOS 的 archive/SVG 构建脚本将已打包组件的许可放在 Contents/MacOS/codecs/licenses。
+macOS 的 archive/SVG/AVIF/FFmpeg/ImageMagick 构建脚本将许可放在
+Contents/Resources/codecs/licenses；动态库和解码模块在 Contents/MacOS/codecs。
 新增原生组件时，必须在对应构建流程收集实际分发版本的许可；列表会随目录内容更新。
 
 公开发布时另提供与实际应用 ZIP 绑定的[对应源码索引和固定链接](source-delivery.md)，包括上游覆盖代码、

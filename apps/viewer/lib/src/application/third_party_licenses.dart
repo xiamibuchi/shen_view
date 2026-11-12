@@ -71,11 +71,7 @@ Stream<LicenseEntry> appLicenseEntries({
     if (names.isEmpty && entry.packages.isNotEmpty) continue;
     yield _FilteredLicenseEntry(names, entry);
   }
-  final directory =
-      nativeLicenseDirectory ??
-      Directory(
-        p.join(p.dirname(Platform.resolvedExecutable), 'codecs', 'licenses'),
-      );
+  final directory = nativeLicenseDirectory ?? _nativeLicenseDirectory();
   if (!directory.existsSync()) return;
   final files = await directory
       .list(recursive: true, followLinks: false)
@@ -113,6 +109,23 @@ Stream<LicenseEntry> appLicenseEntries({
       yield _NativeLicenseEntry(name, filename, text);
     }
   }
+}
+
+/// Windows keeps notices next to the bundled codecs. The macOS bundle cannot:
+/// codesign rejects non-code files under Contents/MacOS, so the same
+/// `codecs/licenses/<component>/` tree is shipped under Contents/Resources.
+Directory _nativeLicenseDirectory() {
+  final executableDirectory = p.dirname(Platform.resolvedExecutable);
+  final candidates = [
+    p.join(executableDirectory, 'codecs', 'licenses'),
+    if (Platform.isMacOS)
+      p.join(executableDirectory, '..', 'Resources', 'codecs', 'licenses'),
+  ];
+  for (final path in candidates) {
+    final directory = Directory(path);
+    if (directory.existsSync()) return directory;
+  }
+  return Directory(candidates.first);
 }
 
 /// ImageMagick ships its delegate licenses in one file with section headings.

@@ -10,7 +10,23 @@ Map<String, String> nativeDecoderEnvironment(
   );
   final directory = path.dirname(executable);
   if (!isWindows) {
-    return {...inherited, 'MAGICK_CONFIGURE_PATH': directory};
+    final bundled =
+        path.basename(directory) == 'imagemagick' &&
+        path.basename(path.dirname(directory)) == 'codecs';
+    final configuration = path.normalize(
+      path.join(directory, '../../../Resources/codecs/imagemagick'),
+    );
+    return {
+      ...inherited,
+      'MAGICK_CONFIGURE_PATH': bundled ? configuration : directory,
+      if (bundled) ...{
+        'MAGICK_CODER_MODULE_PATH': path.join(configuration, 'modules/coders'),
+        'MAGICK_FILTER_MODULE_PATH': path.join(
+          configuration,
+          'modules/filters',
+        ),
+      },
+    };
   }
   final searchPath = inherited.entries
       .where((entry) => entry.key.toUpperCase() == 'PATH')

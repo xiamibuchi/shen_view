@@ -87,6 +87,13 @@ class NativeDecoder {
           'imagemagick',
           'magick.exe',
         ),
+      if (Platform.isMacOS)
+        paths.join(
+          paths.dirname(Platform.resolvedExecutable),
+          'codecs',
+          'imagemagick',
+          'magick',
+        ),
       paths.join(
         paths.dirname(Platform.resolvedExecutable),
         'codecs',

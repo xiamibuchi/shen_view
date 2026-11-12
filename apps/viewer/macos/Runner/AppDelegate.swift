@@ -44,7 +44,7 @@ class AppDelegate: FlutterAppDelegate {
     receiveFiles(files)
   }
 
-  func application(_ sender: NSApplication, openFiles filenames: [String]) {
+  override func application(_ sender: NSApplication, openFiles filenames: [String]) {
     receiveFiles(filenames)
     sender.reply(toOpenOrPrint: .success)
   }
@@ -57,7 +57,7 @@ class AppDelegate: FlutterAppDelegate {
     }
   }
 
-  func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+  override func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
     if dartReady { instanceChannel?.invokeMethod("openFiles", arguments: [String]()) }
     return true
   }

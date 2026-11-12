@@ -4,7 +4,7 @@ const { execFileSync } = require('node:child_process');
 function planChecks(files) {
   const docsOnly = files.length > 0 && files.every(file =>
     file === 'README.md' || /^docs\/(?:[^/]+\/)*[^/]+\.md$/.test(file));
-  return { windows_required: !docsOnly };
+  return { windows_required: !docsOnly, macos_required: !docsOnly };
 }
 
 if (require.main === module) {
@@ -15,6 +15,7 @@ if (require.main === module) {
     .split('\0').filter(Boolean);
   const plan = planChecks(files);
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `windows_required=${plan.windows_required}\n`);
+  fs.appendFileSync(process.env.GITHUB_OUTPUT, 'macos_required=' + plan.macos_required + '\n');
   console.log(JSON.stringify({ files, ...plan }, null, 2));
 }
 

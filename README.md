@@ -22,7 +22,7 @@ ShenView is in development. Official downloads are not yet available; see [devel
 | Platform | Status |
 | --- | --- |
 | Windows | Windows 10 version 2004 or later, x64. |
-| macOS | In development; validation on Mac hardware is pending. |
+| macOS | macOS 15 or later on Apple silicon (arm64); in development. Intel Macs are not supported. |
 | Linux | Not currently supported. |
 
 ## Documentation

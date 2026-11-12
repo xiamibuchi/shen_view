@@ -84,6 +84,10 @@ class CodecProcess {
       ...developmentCodecCandidates('avif-codecs/bin/$executable'),
       ...developmentCodecCandidates('hdr-codecs/bin/$executable'),
       ...developmentCodecCandidates('svg-codecs/bin/$executable'),
+      if (Platform.isMacOS && (name == 'ffmpeg' || name == 'ffprobe')) ...[
+        paths.join('/opt/homebrew/opt/ffmpeg-full/bin', executable),
+        paths.join('/usr/local/opt/ffmpeg-full/bin', executable),
+      ],
       if (Platform.isMacOS) '/opt/homebrew/bin/$name',
     ];
     for (final path in candidates) {

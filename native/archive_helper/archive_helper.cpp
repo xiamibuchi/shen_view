@@ -9,12 +9,11 @@
 // clang-format on
 #include <algorithm>
 #include <chrono>
-#include <codecvt>
+#include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <locale>
 #include <set>
 #include <sstream>
 #include <string>
@@ -24,6 +23,28 @@
 #include <sys/resource.h>
 #endif
 namespace fs = std::filesystem;
+
+#ifndef _WIN32
+static void appendUtf8(std::string &out, uint32_t value) {
+  if (value < 0x80) {
+    out.push_back(static_cast<char>(value));
+  } else if (value < 0x800) {
+    out.push_back(static_cast<char>(0xC0 | (value >> 6)));
+    out.push_back(static_cast<char>(0x80 | (value & 0x3F)));
+  } else if (value < 0x10000) {
+    out.push_back(static_cast<char>(0xE0 | (value >> 12)));
+    out.push_back(static_cast<char>(0x80 | ((value >> 6) & 0x3F)));
+    out.push_back(static_cast<char>(0x80 | (value & 0x3F)));
+  } else if (value <= 0x10FFFF) {
+    out.push_back(static_cast<char>(0xF0 | (value >> 18)));
+    out.push_back(static_cast<char>(0x80 | ((value >> 12) & 0x3F)));
+    out.push_back(static_cast<char>(0x80 | ((value >> 6) & 0x3F)));
+    out.push_back(static_cast<char>(0x80 | (value & 0x3F)));
+  } else {
+    throw std::runtime_error("utf8");
+  }
+}
+#endif
 
 static std::wstring wide(const std::string &text) {
 #ifdef _WIN32
@@ -39,7 +60,48 @@ static std::wstring wide(const std::string &text) {
                       static_cast<int>(text.size()), result.data(), length);
   return result;
 #else
-  return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(text);
+  // 7-Zip's POSIX build passes text as UTF-16 code units widened to wchar_t,
+  // so non-BMP characters must leave here as surrogate pairs.
+  std::wstring result;
+  for (size_t i = 0; i < text.size();) {
+    const unsigned char lead = static_cast<unsigned char>(text[i]);
+    uint32_t value = 0;
+    size_t size = 0;
+    if (lead < 0x80) {
+      value = lead;
+      size = 1;
+    } else if ((lead & 0xE0) == 0xC0) {
+      value = lead & 0x1F;
+      size = 2;
+    } else if ((lead & 0xF0) == 0xE0) {
+      value = lead & 0x0F;
+      size = 3;
+    } else if ((lead & 0xF8) == 0xF0) {
+      value = lead & 0x07;
+      size = 4;
+    } else {
+      throw std::runtime_error("utf8");
+    }
+    if (i + size > text.size())
+      throw std::runtime_error("utf8");
+    for (size_t k = 1; k < size; ++k) {
+      const unsigned char next = static_cast<unsigned char>(text[i + k]);
+      if ((next & 0xC0) != 0x80)
+        throw std::runtime_error("utf8");
+      value = (value << 6) | (next & 0x3F);
+    }
+    i += size;
+    if (value > 0x10FFFF || (value >= 0xD800 && value <= 0xDFFF))
+      throw std::runtime_error("utf8");
+    if (value > 0xFFFF) {
+      value -= 0x10000;
+      result.push_back(static_cast<wchar_t>(0xD800 + (value >> 10)));
+      result.push_back(static_cast<wchar_t>(0xDC00 + (value & 0x3FF)));
+    } else {
+      result.push_back(static_cast<wchar_t>(value));
+    }
+  }
+  return result;
 #endif
 }
 static std::string utf8(const wchar_t *text) {
@@ -56,9 +118,25 @@ static std::string utf8(const wchar_t *text) {
   result.pop_back();
   return result;
 #else
-  return text
-             ? std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(text)
-             : std::string();
+  if (!text)
+    return {};
+  // 7-Zip's POSIX build hands out UTF-16 code units widened to wchar_t, so a
+  // non-BMP character arrives as a surrogate pair instead of one code point.
+  std::string result;
+  for (const wchar_t *c = text; *c; ++c) {
+    uint32_t value = static_cast<uint32_t>(*c);
+    if (value >= 0xD800 && value <= 0xDBFF) {
+      const uint32_t low = static_cast<uint32_t>(c[1]);
+      if (low < 0xDC00 || low > 0xDFFF)
+        throw std::runtime_error("utf16");
+      value = 0x10000 + ((value - 0xD800) << 10) + (low - 0xDC00);
+      ++c;
+    } else if (value >= 0xDC00 && value <= 0xDFFF) {
+      throw std::runtime_error("utf16");
+    }
+    appendUtf8(result, value);
+  }
+  return result;
 #endif
 }
 static bool constrainMemory() {

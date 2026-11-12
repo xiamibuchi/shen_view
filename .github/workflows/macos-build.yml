@@ -1,0 +1,115 @@
+name: macOS app checks
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+      artifact-name:
+        type: string
+        required: true
+      static-checked:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    name: macOS Release and app tests
+    runs-on: macos-15
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '15.0'
+      HOMEBREW_NO_ANALYTICS: '1'
+      SHENVIEW_MAGICK: ${{ github.workspace }}/apps/viewer/build/macos/Build/Products/Release/ShenView.app/Contents/MacOS/codecs/imagemagick/magick
+      SHENVIEW_FFMPEG: ${{ github.workspace }}/apps/viewer/build/macos/Build/Products/Release/ShenView.app/Contents/MacOS/codecs/ffmpeg/ffmpeg
+      SHENVIEW_FFPROBE: ${{ github.workspace }}/apps/viewer/build/macos/Build/Products/Release/ShenView.app/Contents/MacOS/codecs/ffmpeg/ffprobe
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          lfs: true
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          cache: true
+      - name: Install native build dependencies
+        run: |
+          brew install cmake pkgconf dav1d zimg libplacebo vulkan-loader imagemagick-full
+          if ! command -v pod >/dev/null; then brew install cocoapods; fi
+          flutter_bin=$(command -v flutter)
+          echo "FLUTTER_ROOT=${flutter_bin%/bin/flutter}" >> "$GITHUB_ENV"
+          test "$(uname -m)" = arm64
+          xcodebuild -version
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: build/ffmpeg/macos/ffmpeg-9.0.2.tar.xz
+          key: macos-ffmpeg-source-${{ hashFiles('third_party/ffmpeg/source.lock.json') }}
+      - name: Record toolchain
+        run: |
+          mkdir -p artifacts/ci
+          flutter --version > artifacts/ci/flutter.txt
+          xcodebuild -version > artifacts/ci/xcode.txt
+          cmake --version > artifacts/ci/cmake.txt
+          brew list --versions > artifacts/ci/homebrew-packages.txt
+          git rev-parse HEAD > artifacts/ci/source-sha.txt
+      - name: Prepare dependencies and generated source
+        run: |
+          cd apps/viewer
+          flutter pub get --enforce-lockfile
+          flutter gen-l10n
+          dart run tool/generate_license_exclusions.dart
+          git diff --exit-code -- lib/l10n lib/src/application/license_exclusions.g.dart pubspec.lock
+      - name: Build macOS Release and bundled codecs
+        run: |
+          cd apps/viewer
+          flutter build macos --release --no-pub 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/ci/build.log"
+      - name: Static checks
+        if: ${{ !inputs.static-checked }}
+        run: |
+          cd apps/viewer
+          flutter pub run custom_lint
+          flutter analyze --no-pub
+      - name: Flutter tests with bundled codecs
+        run: |
+          test -x "$SHENVIEW_MAGICK"
+          test -x "$SHENVIEW_FFMPEG"
+          test -x "$SHENVIEW_FFPROBE"
+          cd apps/viewer
+          flutter test --no-pub --reporter expanded 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/ci/tests.log"
+      - name: Real app playback and viewer regression
+        run: |
+          cd apps/viewer
+          flutter test -d macos --no-pub integration_test/photo_media_playback_test.dart 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/ci/photo-media.log"
+          flutter test -d macos --no-pub integration_test/viewer_regression_test.dart 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/ci/viewer-regression.log"
+      - name: Package and verify app ZIP
+        run: |
+          bash tool/ci/package_macos.sh 2>&1 | tee artifacts/ci/package.log
+      - name: Upload app ZIP and build records
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: |
+            artifacts/releases/**/macos-arm64/zip-ci/*.zip
+            artifacts/releases/**/macos-arm64/zip-ci/SHA256SUMS.txt
+            artifacts/releases/**/macos-arm64/zip-ci/release.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact-name }}-diagnostics
+          path: artifacts/ci
+          if-no-files-found: warn
+          retention-days: 14
