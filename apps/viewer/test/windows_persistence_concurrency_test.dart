@@ -127,13 +127,19 @@ void main() {
         const Duration(milliseconds: 100),
         guard.close,
       );
+      late final Map<String, dynamic> barrier;
       try {
-        expect((await worker.waitFor('ready'))['pid'], worker.process.pid);
+        // The lock is held for 100ms, so this only returns once waitFor retries
+        // past the sharing violation.
+        barrier = await worker.waitFor('ready');
       } finally {
         await release;
       }
       await signal(file('go'));
-      await worker.finish();
+      final result = await worker.finish();
+      // dart.exe may run the VM in a child process on Windows, so the barrier's
+      // pid is not the launcher pid; compare it with the same worker's result.
+      expect(barrier['pid'], result['pid']);
     });
 
     void expectPreserved(Map<String, dynamic> value) {
